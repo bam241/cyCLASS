@@ -1,6 +1,7 @@
 *.sw*
 build
 debug
+Xcode
 doxygen.conf
 suffix.h
 *~
