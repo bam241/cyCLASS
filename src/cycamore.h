@@ -1,7 +1,7 @@
-#ifndef CYCAMORE_SRC_CYCAMORE_H_
-#define CYCAMORE_SRC_CYCAMORE_H_
+#ifndef cycbam_SRC_cycbam_H_
+#define cycbam_SRC_cycbam_H_
 
-#include "cycamore_version.h"
+#include "cycbam_version.h"
 
 #include "batch_reactor.h"
 #include "batch_reactor_tests.h"
@@ -19,4 +19,4 @@
 #include "source.h"
 #include "source_tests.h"
 
-#endif  // CYCAMORE_SRC_CYCAMORE_H_
+#endif  // cycbam_SRC_cycbam_H_
