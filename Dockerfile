@@ -1,1 +1,0 @@
-docker/cycamore-ci/Dockerfile
