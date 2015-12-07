@@ -2,7 +2,6 @@
 #define CYBAM_SRC_REACTOR_H_
 
 #include "cyclus.h"
-#include "cybam_version.h"
 
 namespace cybam {
 
@@ -108,8 +107,6 @@ class Reactor : public cyclus::Facility,
  public:
   Reactor(cyclus::Context* ctx);
   virtual ~Reactor(){};
-
-  virtual std::string version() { return CYBAM_VERSION; }
 
   virtual void Tick();
   virtual void Tock();
