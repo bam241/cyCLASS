@@ -180,6 +180,7 @@ class Reactor : public cyclus::Facility,
     "doc": "Ordered list of input commodities on which to requesting fuel.", \
   }
   std::vector<std::string> fuel_incommods;
+
   #pragma cyclus var { \
     "uitype": ["oneormore", "recipe"], \
     "uilabel": "Fresh Fuel Recipe List", \
@@ -197,6 +198,7 @@ class Reactor : public cyclus::Facility,
            "requests (default).", \
   }
   std::vector<double> fuel_prefs;
+
   #pragma cyclus var { \
     "uitype": ["oneormore", "outcommodity"], \
     "uilabel": "Spent Fuel Commodity List", \
@@ -204,6 +206,7 @@ class Reactor : public cyclus::Facility,
            "received as each particular input commodity (same order)." \
   }
   std::vector<std::string> fuel_outcommods;
+
   #pragma cyclus var {		       \
     "uitype": ["oneormore", "recipe"], \
     "uilabel": "Spent Fuel Recipe List", \
@@ -213,7 +216,7 @@ class Reactor : public cyclus::Facility,
            "the recipe specified here after being burned during a cycle.", \
   }
   std::vector<std::string> fuel_outrecipes;
-
+/*
   ///////////// recipe changes ///////////
   #pragma cyclus var { \
     "default": [], \
@@ -249,7 +252,7 @@ class Reactor : public cyclus::Facility,
     "uitype": ["oneormore", "recipe"], \
   }
   std::vector<std::string> recipe_change_out;
-  
+  */
  //////////// inventory and core params ////////////
   #pragma cyclus var { \
     "doc": "Mass (kg) of a single assembly.",	\

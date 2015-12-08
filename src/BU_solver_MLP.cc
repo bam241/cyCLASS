@@ -6,18 +6,31 @@
 #include "TMVA/MethodCuts.h"
 
 #include <sstream>
-
+#include <map>
 
 
 
 using cyclus::Material;
 using cyclus::Composition;
-using pyne::simple_xs;
 
-typedef std::map<int, double> CompMap;
+typedef std::map<cyclus::Nuc, double> CompMap;
 
-namespace cycbam {
+namespace cybam {
 
+    //________________________________________________________________________
+    MLPBUsolver::MLPBUsolver(std::string inputfile){
+
+        TMVAWeightFile = inputfile;
+        reader = new TMVA::Reader( "Silent" );
+
+
+    }
+
+    //________________________________________________________________________
+    MLPBUsolver::~MLPBUsolver(){
+        delete reader;
+
+    }
 
     //________________________________________________________________________
     TTree* MLPBUsolver::CreateTMVAInputTree(cyclus::Composition::Ptr c_fissil,
@@ -28,7 +41,7 @@ namespace cycbam {
         float Pu10 = 0;
         float Pu11 = 0;
         float Pu12 = 0;
-        float Am1  = 0;
+        float Am11  = 0;
         float U5   = 0;
         float U8   = 0;
         float U4   = 0;
@@ -42,17 +55,17 @@ namespace cycbam {
         InputTree->Branch(	"Pu10"	,&Pu10	,"Pu10/F"	);
         InputTree->Branch(	"Pu11"	,&Pu11	,"Pu11/F"	);
         InputTree->Branch(	"Pu12"	,&Pu12	,"Pu12/F"	);
-        InputTree->Branch(	"Am1"	,&Am1	,"Am1/F"	);
+        InputTree->Branch(	"Am1"	,&Am11	,"Am1/F"	);
         InputTree->Branch(	"U5_enrichment"	,&U5	,"U5_enrichment/F"	);
         InputTree->Branch(	"BU"	,&BU	,"BU/F"	);
 
 
 
         //Get Pu composition
-        CompMap fissil_map = f_fissil.atom();
+        CompMap fissil_map = c_fissil->atom();
 
         cyclus::CompMap::iterator it;
-        for (it = f_fissil.begin(); it != f_fissil.end(); it++){
+        for (it = fissil_map.begin(); it != fissil_map.end(); it++){
             cyclus::Nuc nuc = it->first;
             double Q = it->second;
 
@@ -65,28 +78,28 @@ namespace cycbam {
             } else if (nuc == 942410000) {
                 Pu11 = Q;
             } else if (nuc == 942420000) {
-                Pu11 = Q;
+                Pu12 = Q;
             } else if (nuc == 952410000) {
                 Am11 = Q;
             } else  {
-                cout << "Pb exception... BAD Pu stream" << endl;
+                std::cout << "Pb exception... BAD Pu stream" << std::endl;
             }
         }
 
         // Normalize Pu composition
-        double Pu = Pu8 + Pu9 + Pu10 + Pu11 + Pu12 + Am1;
+        double Pu = Pu8 + Pu9 + Pu10 + Pu11 + Pu12 + Am11;
         Pu8  *= 1/Pu;
         Pu9  *= 1/Pu;
         Pu10 *= 1/Pu;
         Pu11 *= 1/Pu;
         Pu12 *= 1/Pu;
-        Am1  *= 1/Pu;
+        Am11  *= 1/Pu;
 
 
         //Get U composition
-        CompMap fertil_map = f_fissil.atom();
+        CompMap fertil_map = c_fertil->atom();
 
-        for (it = f_fissil.begin(); it != f_fissil.end(); it++){
+        for (it = fertil_map.begin(); it != fertil_map.end(); it++){
             cyclus::Nuc nuc = it->first;
             double Q = it->second;
 
@@ -97,7 +110,7 @@ namespace cycbam {
             } else if (nuc == 922340000) {
                 U4 = Q;
             } else  {
-                cout << "Pb exception... BAD U stream" << endl;
+                std::cout << "Pb exception... BAD U stream" << std::endl;
             }
         }
 
@@ -115,44 +128,140 @@ namespace cycbam {
 
 
     //________________________________________________________________________
-    double EQM_PWR_MLP_MOX::ExecuteTMVA(TTree* theTree)
-    {
-    // --- Create the Reader object
-    TMVA::Reader *reader = new TMVA::Reader( "Silent" );
-    // Create a set of variables and declare them to the reader
-    // - the variable names MUST corresponds in name and type to those given in the weight file(s) used
-    Float_t Pu8,Pu9,Pu10,Pu11,Pu12,Am1,BU,U5_enrichment;
+    double MLPBUsolver::GetEnrichment(cyclus::Composition::Ptr c_fissil,
+                                      cyclus::Composition::Ptr c_fertil,
+                                      double BurnUp){
 
-    reader->AddVariable( "BU"   		,&BU );
-    reader->AddVariable( "U5_enrichment",&U5_enrichment );
-    reader->AddVariable( "Pu8"  		,&Pu8 );
-    reader->AddVariable( "Pu9"  		,&Pu9 );
-    reader->AddVariable( "Pu10" 		,&Pu10);
-    reader->AddVariable( "Pu11" 		,&Pu11);
-    reader->AddVariable( "Pu12" 		,&Pu12);
-    reader->AddVariable( "Am1"  		,&Am1 );
+        // Create a set of variables and declare them to the reader
+        // - the variable names MUST corresponds in name and type to those given in the weight file(s) used
+        Float_t Pu8,Pu9,Pu10,Pu11,Pu12,Am1,BU,U5_enrichment;
 
-    // --- Book the MVA methods
+        reader->AddVariable( "BU"   		,&BU );
+        reader->AddVariable( "U5_enrichment",&U5_enrichment );
+        reader->AddVariable( "Pu8"  		,&Pu8 );
+        reader->AddVariable( "Pu9"  		,&Pu9 );
+        reader->AddVariable( "Pu10" 		,&Pu10);
+        reader->AddVariable( "Pu11" 		,&Pu11);
+        reader->AddVariable( "Pu12" 		,&Pu12);
+        reader->AddVariable( "Am1"  		,&Am1 );
 
-    // Book method MLP
-    TString methodName = "MLP method";
-    reader->BookMVA( methodName, TMVAWeightFile );
-    theTree->SetBranchAddress( "BU"   			,&BU 	);
-    theTree->SetBranchAddress( "U5_enrichment"  ,&U5_enrichment  )	;
-    theTree->SetBranchAddress( "Pu8"  			,&Pu8  );
-    theTree->SetBranchAddress( "Pu9"  			,&Pu9  );
-    theTree->SetBranchAddress( "Pu10" 			,&Pu10 );
-    theTree->SetBranchAddress( "Pu11" 			,&Pu11 );
-    theTree->SetBranchAddress( "Pu12" 			,&Pu12 );
-    theTree->SetBranchAddress( "Am1"  			,&Am1  );
-    theTree->GetEntry(0);
-    
-    Float_t val = (reader->EvaluateRegression( methodName ))[0];
-    
-    delete reader;
-    delete theTree;
-    
-    return (double)val; //retourne teneur
+        // --- Book the MVA methods
+        TString methodName = "MLP method";
+        reader->BookMVA( methodName, TMVAWeightFile );
+
+        // Book method MLP
+        TTree* theTree = CreateTMVAInputTree(c_fissil, c_fertil, BurnUp);
+
+        theTree->SetBranchAddress( "BU"   			,&BU 	);
+        theTree->SetBranchAddress( "U5_enrichment"  ,&U5_enrichment  )	;
+        theTree->SetBranchAddress( "Pu8"  			,&Pu8  );
+        theTree->SetBranchAddress( "Pu9"  			,&Pu9  );
+        theTree->SetBranchAddress( "Pu10" 			,&Pu10 );
+        theTree->SetBranchAddress( "Pu11" 			,&Pu11 );
+        theTree->SetBranchAddress( "Pu12" 			,&Pu12 );
+        theTree->SetBranchAddress( "Am1"  			,&Am1  );
+        theTree->GetEntry(0);
+
+        Float_t val = (reader->EvaluateRegression( methodName ))[0];
+
+        delete theTree;
+
+        return (double)val; //
     }
+
+
+    //________________________________________________________________________
+    double MLPBUsolver::GetBU(cyclus::Composition::Ptr fuel, double eps)
+    {
+
+    double BU_max = 60;
+    double BU_min = 20;
+
+    cyclus::Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, fissil_list);
+    cyclus::Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, fertil_list);
+
+    if(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) != AtomIn(fuel)){
+        std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
+        exit(1);
+    }
+
+
+    double rho_target = AtomIn(fuel_fissil)/AtomIn(fuel);
+
+    double rho_min = GetEnrichment(fuel_fissil, fuel_fertil, BU_min);
+    double rho_max = GetEnrichment(fuel_fissil, fuel_fertil, BU_max);
+    double BU_estimation = 0;
+    double rho_estimated = 0;
+
+
+    do {
+        //Update BU_estimation
+        BU_estimation = (BU_max+BU_min)/2;
+
+        rho_estimated = GetEnrichment(fuel_fissil, fuel_fertil, BU_estimation);
+
+        if(rho_estimated == rho_target){
+
+            return BU_estimation;
+
+        } else if (rho_estimated > rho_target){
+
+            rho_min = rho_estimated;
+            BU_min = BU_estimation;
+
+        } else {
+
+            rho_max = rho_estimated;
+            BU_max = BU_estimation;
+
+        }
+
+    }while( std::abs(rho_target - rho_estimated) > eps );
+
+    return BU_estimation;
+
+    }
+
+
+    //________________________________________________________________________
+    double AtomIn(cyclus::Composition::Ptr Source){
+
+        double total = 0;
+        CompMap Source_map = Source->atom();
+
+        CompMap::iterator it;
+
+        for(it = Source_map.begin(); it != Source_map.end(); it++)
+            total += it->second;
+
+        return total;
+    }
+
+    //________________________________________________________________________
+    cyclus::Composition::Ptr ExtractAccordinglist( cyclus::Composition::Ptr source, cyclus::Composition::Ptr list){
+
+        //create Output Composition
+        CompMap separatedCompo;
+
+        // Extract Nuc map from source compo & list...
+        CompMap sourceComp = source->atom();
+        CompMap ListComp = list->atom();
+        
+        CompMap::iterator it;
+        
+        // Fill output composition
+        for (it = ListComp.begin(); it != ListComp.end(); it++) {
+            CompMap::iterator it2 = sourceComp.find( it->first );
+            
+            if(it2 != sourceComp.end())
+                separatedCompo.insert( std::pair<cyclus::Nuc,double>(it->first, it2->second) );
+            
+        }
+        
+        return Composition::CreateFromAtom(separatedCompo);
+    }
+    
+    
+    
     
 }
