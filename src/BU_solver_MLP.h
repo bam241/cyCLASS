@@ -8,6 +8,12 @@
 class TTree;
 
 
+/// For the moment, this is just an adaptation of the CLASS-MLP Model to CYCLUS
+/// @code
+/// [1] B. Leniau, B. Mouginota, N. Thiolliere et al. "A neural network approach
+/// for burn-up calculation and its application to the dynamic fuel cycle code
+/// CLASS" Annals of Nuclear Energy, Volume 81, July 2015
+/// @endcode
 namespace cybam {
 
     class MLPBUsolver {
