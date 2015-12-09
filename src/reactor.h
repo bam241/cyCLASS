@@ -181,14 +181,14 @@ class Reactor : public cyclus::Facility,
   }
   std::vector<std::string> fuel_incommods;
 
-  #pragma cyclus var { \
+/*  #pragma cyclus var { \
     "uitype": ["oneormore", "recipe"], \
     "uilabel": "Fresh Fuel Recipe List", \
     "doc": "Fresh fuel recipes to request for each of the given fuel input " \
            "commodities (same order).", \
   }
   std::vector<std::string> fuel_inrecipes;
-
+*/
   #pragma cyclus var { \
     "default": [], \
     "uilabel": "Fresh Fuel Preference List", \

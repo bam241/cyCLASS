@@ -1,19 +1,17 @@
 #include "bu_solver_mlp.h"
 
-//#include "TSystem.h"
 #include "TMVA/Reader.h"
 #include "TMVA/Tools.h"
 #include "TMVA/MethodCuts.h"
 
 #include <sstream>
 #include <map>
-
+#include <string>
 
 
 using cyclus::Material;
 using cyclus::Composition;
 
-typedef std::map<cyclus::Nuc, double> CompMap;
 
 namespace cybam {
 
@@ -22,14 +20,12 @@ namespace cybam {
 
         TMVAWeightFile = inputfile;
         reader = new TMVA::Reader( "Silent" );
-
-
     }
 
     //________________________________________________________________________
     MLPBUsolver::~MLPBUsolver(){
         delete reader;
-
+        tt
     }
 
     //________________________________________________________________________
@@ -47,7 +43,7 @@ namespace cybam {
         float U4   = 0;
         float BU   = BurnUp;
 
-
+        
         //Prepare the input TTree with correct Branch
         TTree*   InputTree = new TTree("EQTMP", "EQTMP");
         InputTree->Branch(	"Pu8"	,&Pu8	,"Pu8/F"	);
@@ -60,11 +56,10 @@ namespace cybam {
         InputTree->Branch(	"BU"	,&BU	,"BU/F"	);
 
 
-
         //Get Pu composition
         CompMap fissil_map = c_fissil->atom();
 
-        cyclus::CompMap::iterator it;
+        CompMap::iterator it;
         for (it = fissil_map.begin(); it != fissil_map.end(); it++){
             cyclus::Nuc nuc = it->first;
             double Q = it->second;
@@ -224,14 +219,15 @@ namespace cybam {
 
 
     //________________________________________________________________________
-    double AtomIn(cyclus::Composition::Ptr Source){
+    //________________________________________________________________________
+    //________________________________________________________________________
+    double AtomIn(CompMap Source){
 
         double total = 0;
-        CompMap Source_map = Source->atom();
 
         CompMap::iterator it;
 
-        for(it = Source_map.begin(); it != Source_map.end(); it++)
+        for(it = Source.begin(); it != Source.end(); it++)
             total += it->second;
 
         return total;
@@ -260,8 +256,21 @@ namespace cybam {
         
         return Composition::CreateFromAtom(separatedCompo);
     }
-    
-    
+
+    //________________________________________________________________________
+    CompMap NormalizeComp( CompMap source, double norm ){
+
+        double Total = AtomIn(source);
+
+
+        CompMap::iterator it;
+        for(it = source.begin(); it != source.end(); it++)
+            it->second *= norm/Total;
+
+        return source;
+    }
+
+
     
     
 }

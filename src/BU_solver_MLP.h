@@ -1,11 +1,11 @@
 #ifndef CYBAM_SRC_FUEL_FAB_H_
 #define CYBAM_SRC_FUEL_FAB_H_
 
-#include <string>
 #include "TMVA/Reader.h"
 #include "cyclus.h"
 
 class TTree;
+typedef std::map<cyclus::Nuc, double> CompMap;
 
 
 /// For the moment, this is just an adaptation of the CLASS-MLP Model to CYCLUS
@@ -19,7 +19,7 @@ namespace cybam {
     class MLPBUsolver {
     public:
         MLPBUsolver(std::string inputfile = "/Users/mouginot/scratch/App/CLASS/Database/PWR/MOX/EQModel/EQM_MLP_PWR_MOX_3batch.xml");
-        virtual ~MLPBUsolver();
+        ~MLPBUsolver();
 
 
         // Create a TMWA input with the compistion of both stream and the targeted BU..
@@ -49,11 +49,11 @@ namespace cybam {
 
     };
 
-
-    double AtomIn(cyclus::Composition::Ptr Source);
+    double AtomIn(CompMap Source);
+    double AtomIn(cyclus::Composition::Ptr Source) { return AtomIn(Source->atom());};
     cyclus::Composition::Ptr ExtractAccordinglist( cyclus::Composition::Ptr source, cyclus::Composition::Ptr list);
+    CompMap NormalizeComp( CompMap source, double norm = 1);
 
 } // namespace cybam
-
 
 #endif  // cybam_SRC_FUEL_FAB_H_

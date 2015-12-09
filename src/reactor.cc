@@ -1,4 +1,5 @@
 #include "reactor.h"
+#include "bu_solver_mlp.h"
 
 using cyclus::Material;
 using cyclus::Composition;
@@ -7,6 +8,8 @@ using cyclus::toolkit::MatVec;
 using cyclus::KeyError;
 using cyclus::ValueError;
 using cyclus::Request;
+
+typedef std::map<cyclus::Nuc, double> CompMap;
 
 namespace cybam {
 
@@ -231,6 +234,25 @@ namespace cybam {
                 std::string commod = fuel_incommods[j];
                 double pref = fuel_prefs[j];
 
+                
+                //Defining the Stream composition
+ /*               CompMap fissil_comp;
+                fissil_comp.insert(std::pair<Nuc, double>(942380000,3));
+                fissil_comp.insert(std::pair<Nuc, double>(942390000,15));
+                fissil_comp.insert(std::pair<Nuc, double>(942400000,10));
+                fissil_comp.insert(std::pair<Nuc, double>(942410000,8));
+                fissil_comp.insert(std::pair<Nuc, double>(942420000,5));
+                fissil_comp.insert(std::pair<Nuc, double>(952410000,2));
+
+
+
+                CompMap fertill_comp;
+                fissil_comp.insert(std::pair<Nuc, double>(922380000,0.25));
+                fissil_comp.insert(std::pair<Nuc, double>(922380000,100));
+
+                Composition::Ptr fissil_stream = cyclus::c;
+                Composition::Ptr fertil_stream;
+*/
                 Composition::Ptr recipe = context()->GetRecipe(fuel_inrecipes[j]);
                 m = Material::CreateUntracked(assem_size, recipe);
 
