@@ -317,8 +317,9 @@ namespace cybam {
             cyclus::Request<Material>* req = reqs[j];
 
             Composition::Ptr tgt = req->target()->comp();
+            double tgt_qty = req->target()->quantity();
             double BU_tgt = MyBUSolver->GetBU(tgt);
-            double fiss_frac = MyBUSolver->GetEnrichment(c_fissil, c_fertil, BU_tgt);
+            double fiss_frac = MyBUSolver->GetEnrichment(c_fiss, c_fill, BU_tgt);
             double fill_frac = 1 - fiss_frac;
 
 
