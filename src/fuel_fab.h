@@ -201,7 +201,7 @@ namespace cybam {
 "default": "", \
 "uitype": "incommodity", \
 }
-        std::string topup_commod;
+/*        std::string topup_commod;
 #pragma cyclus var { \
 "doc": "Top-up material stream request preference.", \
 "uilabel": "Top-up Stream Preference", \
@@ -226,6 +226,7 @@ namespace cybam {
         double topup_size;
 #pragma cyclus var {"capacity": "topup_size"}
         cyclus::toolkit::ResBuf<cyclus::Material> topup;
+*/
 
 #pragma cyclus var { \
 "doc": "Commodity on which to offer/supply mixed fuel material.", \
@@ -254,10 +255,6 @@ namespace cybam {
         std::map<cyclus::Request<cyclus::Material>*, std::string> req_inventories_;
     };
 
-    double CosiWeight(cyclus::Composition::Ptr c, const std::string& spectrum);
-    bool ValidWeights(double w_low, double w_tgt, double w_high);
-    double LowFrac(double w_low, double w_tgt, double w_high, double eps = 1e-6);
-    double HighFrac(double w_low, double w_tgt, double w_high, double eps = 1e-6);
     double AtomToMassFrac(double atomfrac, cyclus::Composition::Ptr c1, cyclus::Composition::Ptr c2);
     
 } // namespace cybam
