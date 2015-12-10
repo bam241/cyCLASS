@@ -3,6 +3,7 @@
 #include "TMVA/Tools.h"
 #include "TMVA/MethodCuts.h"
 
+
 #include <sstream>
 #include <map>
 #include <string>
@@ -10,7 +11,6 @@
 using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
-
 
 namespace cybam {
 

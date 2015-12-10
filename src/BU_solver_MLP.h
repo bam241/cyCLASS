@@ -1,8 +1,9 @@
 #ifndef CYBAM_SRC_FUEL_FAB_H_
 #define CYBAM_SRC_FUEL_FAB_H_
 
-#include "TMVA/Reader.h"
 #include "cyclus.h"
+#include "TMVA/Reader.h"
+
 
 class TTree;
 

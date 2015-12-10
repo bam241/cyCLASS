@@ -1,10 +1,12 @@
 #ifndef CYBAM_SRC_FUEL_FAB_H_
 #define CYBAM_SRC_FUEL_FAB_H_
 
-#include <string>
-#include "cyclus.h"
+
+
 #include "bu_solver_mlp.h"
 
+#include <string>
+#include "cyclus.h"
 
 namespace cybam {
 

@@ -1,12 +1,10 @@
 #include "fuel_fab.h"
-#include "bu_solver_mlp.h"
 
 #include <sstream>
 
 using cyclus::Material;
 using cyclus::Composition;
 using pyne::simple_xs;
-using cybam::MLPBUsolver;
 
 #define SHOW(X)                                                     \
 std::cout << std::setprecision(17) << __FILE__ << ":" << __LINE__ \
