@@ -1,5 +1,5 @@
-#ifndef CYBAM_SRC_FUEL_FAB_H_
-#define CYBAM_SRC_FUEL_FAB_H_
+#ifndef CYBAM_SRC_MLP_BU_H_
+#define CYBAM_SRC_MLP_BU_H_
 
 #include "cyclus.h"
 #include "TMVA/Reader.h"

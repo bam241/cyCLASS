@@ -2,7 +2,7 @@
 
 
 USE_CYCLUS("cybam" "bu_solver_mlp")
-USE_CYCLUS("cybam" "dummy")
+USE_CYCLUS("cybam" "fuel_fab")
 USE_CYCLUS("cybam" "reactor")
 
 INSTALL_CYCLUS_MODULE("cybam" "./")
