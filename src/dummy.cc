@@ -1,10 +1,7 @@
 #include "dummy.h"
 
-#include <sstream>
+#include <iostream>
 
-using cyclus::Material;
-using cyclus::Composition;
-using pyne::simple_xs;
 
 #define SHOW(X)                                                     \
 std::cout << std::setprecision(17) << __FILE__ << ":" << __LINE__ \

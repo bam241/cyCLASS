@@ -5,9 +5,6 @@
 
 #include "bu_solver_mlp.h"
 
-#include <string>
-#include "cyclus.h"
-
 namespace cybam {
 
      class dummy  {
