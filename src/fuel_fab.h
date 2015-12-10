@@ -133,7 +133,7 @@ namespace cybam {
 
     private:
 
-        MLPBUsolver MyBUSolver;
+        MLPBUsolver* MyBUSolver;
 
 
 #pragma cyclus var { \

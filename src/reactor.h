@@ -137,7 +137,7 @@ namespace cybam {
         std::string fuel_outrecipe(cyclus::Material::Ptr m);
         double fuel_pref(cyclus::Material::Ptr m);
 
-        cybam::MLPBUsolver MyBUSolver;
+        MLPBUsolver* MyBUSolver;
 
         bool retired() {
             return exit_time() != -1 && context()->time() >= exit_time();

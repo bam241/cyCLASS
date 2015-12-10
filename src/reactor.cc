@@ -255,7 +255,7 @@ namespace cybam {
                 Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
                 Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
-                double Enrch = MyBUSolver.GetEnrichment(fissil_stream, fertil_stream, burnup );
+                double Enrch = MyBUSolver->GetEnrichment(fissil_stream, fertil_stream, burnup );
 
                 Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
