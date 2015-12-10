@@ -1,6 +1,5 @@
 #include "bu_solver_mlp.h"
 
-#include "TMVA/Reader.h"
 #include "TMVA/Tools.h"
 #include "TMVA/MethodCuts.h"
 
@@ -8,7 +7,7 @@
 #include <map>
 #include <string>
 
-
+using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
 
@@ -25,7 +24,6 @@ namespace cybam {
     //________________________________________________________________________
     MLPBUsolver::~MLPBUsolver(){
         delete reader;
-        tt
     }
 
     //________________________________________________________________________
@@ -37,13 +35,12 @@ namespace cybam {
         float Pu10 = 0;
         float Pu11 = 0;
         float Pu12 = 0;
-        float Am11  = 0;
+        float Am11 = 0;
         float U5   = 0;
         float U8   = 0;
         float U4   = 0;
         float BU   = BurnUp;
 
-        
         //Prepare the input TTree with correct Branch
         TTree*   InputTree = new TTree("EQTMP", "EQTMP");
         InputTree->Branch(	"Pu8"	,&Pu8	,"Pu8/F"	);
@@ -55,13 +52,12 @@ namespace cybam {
         InputTree->Branch(	"U5_enrichment"	,&U5	,"U5_enrichment/F"	);
         InputTree->Branch(	"BU"	,&BU	,"BU/F"	);
 
-
         //Get Pu composition
         CompMap fissil_map = c_fissil->atom();
 
         CompMap::iterator it;
         for (it = fissil_map.begin(); it != fissil_map.end(); it++){
-            cyclus::Nuc nuc = it->first;
+            Nuc nuc = it->first;
             double Q = it->second;
 
             if (nuc == 942380000) {
@@ -95,7 +91,7 @@ namespace cybam {
         CompMap fertil_map = c_fertil->atom();
 
         for (it = fertil_map.begin(); it != fertil_map.end(); it++){
-            cyclus::Nuc nuc = it->first;
+            Nuc nuc = it->first;
             double Q = it->second;
 
             if (nuc == 922380000) {
@@ -232,6 +228,7 @@ namespace cybam {
 
         return total;
     }
+    double AtomIn(cyclus::Composition::Ptr Source) { return AtomIn(Source->atom());};
 
     //________________________________________________________________________
     cyclus::Composition::Ptr ExtractAccordinglist( cyclus::Composition::Ptr source, cyclus::Composition::Ptr list){
@@ -242,27 +239,24 @@ namespace cybam {
         // Extract Nuc map from source compo & list...
         CompMap sourceComp = source->atom();
         CompMap ListComp = list->atom();
-        
+
         CompMap::iterator it;
-        
+
         // Fill output composition
         for (it = ListComp.begin(); it != ListComp.end(); it++) {
             CompMap::iterator it2 = sourceComp.find( it->first );
-            
+
             if(it2 != sourceComp.end())
-                separatedCompo.insert( std::pair<cyclus::Nuc,double>(it->first, it2->second) );
-            
+                separatedCompo.insert( std::pair<Nuc,double>(it->first, it2->second) );
+
         }
-        
+
         return Composition::CreateFromAtom(separatedCompo);
     }
 
     //________________________________________________________________________
     CompMap NormalizeComp( CompMap source, double norm ){
-
         double Total = AtomIn(source);
-
-
         CompMap::iterator it;
         for(it = source.begin(); it != source.end(); it++)
             it->second *= norm/Total;
@@ -271,6 +265,56 @@ namespace cybam {
     }
 
 
+    //________________________________________________________________________
+/*    CompMap operator*(Nuc const& zai, double F) {
+
+        CompMap IVtmp;
+        IVtmp.insert(std::pair<Nuc, double> (zai, F));
+
+        return IVtmp;
+    }
+*/
+    //________________________________________________________________________
+    CompMap operator+( CompMap const& IVa, CompMap const& IVb){
+
+        CompMap IVtmp = IVa;
+        CompMap IVbtmp = IVb;
+        CompMap::iterator it;
+
+        for(it = IVbtmp.begin(); it != IVbtmp.end(); it++){
+
+            std::pair<CompMap::iterator, bool> IResult;
+            IResult = IVtmp.insert(std::pair<Nuc, double> (it->first, it->second));
+            if(!IResult.second)
+                IResult.first->second += it->second;
+
+        }
+        return IVtmp;
+    }
+
+
+    //________________________________________________________________________
+    CompMap operator*(CompMap const& IVA, double F){
+
+        CompMap IVtmp = IVA;
+        CompMap::iterator it;
+        
+        for(it = IVtmp.begin(); it != IVtmp.end(); it++)
+            IVtmp.insert(std::pair<Nuc, double> (it->first, it->second *F));
+        
+        return IVtmp;
+    }
+    
+    CompMap operator-(CompMap const& IVa, CompMap const& IVb) { return IVa + (-1*IVb); };
+    CompMap operator/(CompMap const& IVA, double F) { return IVA * (1/F); };
+    CompMap operator*(double F, CompMap const& IVA) { return IVA*F; };
+
     
     
-}
+    //________________________________________________________________________
+    
+    
+    
+    
+    
+} // namespace cybam

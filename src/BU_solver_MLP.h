@@ -5,7 +5,9 @@
 #include "cyclus.h"
 
 class TTree;
-typedef std::map<cyclus::Nuc, double> CompMap;
+
+using cyclus::Nuc;
+typedef std::map<Nuc, double> CompMap;
 
 
 /// For the moment, this is just an adaptation of the CLASS-MLP Model to CYCLUS
@@ -14,6 +16,10 @@ typedef std::map<cyclus::Nuc, double> CompMap;
 /// for burn-up calculation and its application to the dynamic fuel cycle code
 /// CLASS" Annals of Nuclear Energy, Volume 81, July 2015
 /// @endcode
+
+
+
+
 namespace cybam {
 
     class MLPBUsolver {
@@ -50,9 +56,23 @@ namespace cybam {
     };
 
     double AtomIn(CompMap Source);
-    double AtomIn(cyclus::Composition::Ptr Source) { return AtomIn(Source->atom());};
+    double AtomIn(cyclus::Composition::Ptr Source);
     cyclus::Composition::Ptr ExtractAccordinglist( cyclus::Composition::Ptr source, cyclus::Composition::Ptr list);
     CompMap NormalizeComp( CompMap source, double norm = 1);
+
+ /*   CompMap operator*(Nuc const& zai, double F) ;
+    CompMap operator*(double F, Nuc const& zai) { return zai * F; };
+    CompMap operator/(Nuc const& zai, double F) { return zai * (1/F); };
+*/
+    CompMap operator+(CompMap const& IVa, CompMap const& IVb);
+    CompMap operator*(CompMap const& IVA, double F);
+    CompMap operator*(double F, CompMap const& IVA);
+
+    CompMap operator-(CompMap const& IVa, CompMap const& IVb);
+    CompMap operator/(CompMap const& IVA, double F);
+
+//    CompMap operator*(CompMap const& IVa, CompMap const& IVb);
+
 
 } // namespace cybam
 

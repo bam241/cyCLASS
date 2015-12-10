@@ -18,6 +18,7 @@ namespace cybam {
     n_assem_batch(0),
     assem_size(0),
     n_assem_core(0),
+    burnup(0),
     n_assem_spent(0),
     n_assem_fresh(0),
     cycle_time(0),
@@ -236,25 +237,29 @@ namespace cybam {
 
                 
                 //Defining the Stream composition
- /*               CompMap fissil_comp;
+                CompMap fissil_comp;
                 fissil_comp.insert(std::pair<Nuc, double>(942380000,3));
                 fissil_comp.insert(std::pair<Nuc, double>(942390000,15));
                 fissil_comp.insert(std::pair<Nuc, double>(942400000,10));
                 fissil_comp.insert(std::pair<Nuc, double>(942410000,8));
                 fissil_comp.insert(std::pair<Nuc, double>(942420000,5));
                 fissil_comp.insert(std::pair<Nuc, double>(952410000,2));
+                NormalizeComp(fissil_comp);
 
 
+                CompMap fertil_comp;
+                fertil_comp.insert(std::pair<Nuc, double>(922380000,0.25));
+                fertil_comp.insert(std::pair<Nuc, double>(922380000,100));
+                cybam::NormalizeComp(fertil_comp);
 
-                CompMap fertill_comp;
-                fissil_comp.insert(std::pair<Nuc, double>(922380000,0.25));
-                fissil_comp.insert(std::pair<Nuc, double>(922380000,100));
+                Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
+                Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
-                Composition::Ptr fissil_stream = cyclus::c;
-                Composition::Ptr fertil_stream;
-*/
-                Composition::Ptr recipe = context()->GetRecipe(fuel_inrecipes[j]);
-                m = Material::CreateUntracked(assem_size, recipe);
+                double Enrch = MyBUSolver.GetEnrichment(fissil_stream, fertil_stream, burnup );
+
+                Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
+
+                m = Material::CreateUntracked(assem_size, fuel);
 
                 Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
                 mreqs.push_back(r);
@@ -477,7 +482,7 @@ namespace cybam {
         return fuel_outcommods[i];
     }
 
-    //________________________________________________________________________
+/*    //________________________________________________________________________
     std::string Reactor::fuel_inrecipe(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_inrecipes.size()) {
@@ -485,7 +490,7 @@ namespace cybam {
         }
         return fuel_inrecipes[i];
     }
-
+*/
     //________________________________________________________________________
     std::string Reactor::fuel_outrecipe(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
@@ -530,7 +535,6 @@ namespace cybam {
         for (it = mapped.begin(); it != mapped.end(); ++it) {
             std::reverse(it->second.begin(), it->second.end());
         }
-
         return mapped;
     }
 
