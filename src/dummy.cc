@@ -14,7 +14,7 @@ namespace cybam {
 
     dummy::dummy() {
 
-        std::cout << " toto" << std:endl;
+        std::cout << " toto" << std::endl;
     }
 
 }  // namespace cybam
