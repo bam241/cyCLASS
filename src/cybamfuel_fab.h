@@ -242,13 +242,6 @@ namespace cybam {
 }
         double throughput;
 
-#pragma cyclus var {		\
-"uilabel": "Spectrum type", \
-"categorical": ['fission_spectrum_ave','thermal'], \
-"doc": "The type of cross-sections to use for composition property calculation." \
-" Use 'fission_spectrum_ave' for fast reactor compositions or 'thermal' for thermal reactors.", \
-}
-        std::string spectrum;
 
         // intra-time-step state - no need to be a state var
         // map<request, inventory name>
