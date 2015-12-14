@@ -10,12 +10,12 @@
 
 namespace cybam {
 
-    /// FuelFab takes in 2 streams of material and mixes them in ratios in order to
+    /// cybamFuelFab takes in 2 streams of material and mixes them in ratios in order to
     /// supply material that matches some neutronics properties of reqeusted
     /// material.  It uses an equivalence type method [1]
     /// inspired by a similar approach in the COSI fuel cycle simulator.
     ///
-    /// The FuelFab has 3 input inventories: fissile stream, filler stream, and an
+    /// The cybamFuelFab has 3 input inventories: fissile stream, filler stream, and an
     /// optional top-up inventory.  All materials received into each inventory are
     /// always combined into a single material (i.e. a single fissile material, a
     /// single filler material, etc.).  The input streams and requested fuel
@@ -38,7 +38,7 @@ namespace cybam {
     /// interpolation is performed using the weights of the fissile, filler, and
     /// target streams. The interpolation is used to compute a mixing ratio of the
     /// input streams that matches the target weight.  In the event that the target
-    /// weight is higher than the fissile stream weight, the FuelFab will attempt
+    /// weight is higher than the fissile stream weight, the cybamFuelFab will attempt
     /// to use the top-up and fissile input streams together instead of the fissile
     /// and filler streams.  All supplied material will always have the same weight
     /// as the requested material.
@@ -56,16 +56,16 @@ namespace cybam {
     ///     uranium isotopes in fast reactors." Proceedings of the Conference on
     ///     Breeding. Economics, and Safety in Large Fast Power Reactors. 1963.
     /// @endcode
-    class FuelFab : public cyclus::Facility {
+    class cybamFuelFab : public cyclus::Facility {
 #pragma cyclus note { \
 "niche": "fabrication", \
 "doc": \
-"FuelFab takes in 2 streams of material and mixes them in ratios in order to" \
+"cybamFuelFab takes in 2 streams of material and mixes them in ratios in order to" \
 " supply material that matches some neutronics properties of reqeusted" \
 " material.  It uses an equivalence type method [1]" \
 " inspired by a similar approach in the COSI fuel cycle simulator." \
 "\n\n" \
-"The FuelFab has 3 input inventories: fissile stream, filler stream, and an" \
+"The cybamFuelFab has 3 input inventories: fissile stream, filler stream, and an" \
 " optional top-up inventory.  All materials received into each inventory are" \
 " always combined into a single material (i.e. a single fissile material, a" \
 " single filler material, etc.).  The input streams and requested fuel" \
@@ -88,7 +88,7 @@ namespace cybam {
 " interpolation is performed using the weights of the fissile, filler, and" \
 " target streams. The interpolation is used to compute a mixing ratio of the" \
 " input streams that matches the target weight.  In the event that the target" \
-" weight is higher than the fissile stream weight, the FuelFab will attempt" \
+" weight is higher than the fissile stream weight, the cybamFuelFab will attempt" \
 " to use the top-up and fissile input streams together instead of the fissile" \
 " and filler streams.  All supplied material will always have the same weight" \
 " as the requested material." \
@@ -107,8 +107,8 @@ namespace cybam {
 "", \
 }
     public:
-        FuelFab(cyclus::Context* ctx);
-        virtual ~FuelFab(){};
+        cybamFuelFab(cyclus::Context* ctx);
+        virtual ~cybamFuelFab(){};
 
 
 #pragma cyclus

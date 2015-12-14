@@ -55,7 +55,7 @@ namespace cybam {
     class Reactor : public cyclus::Facility,
     public cyclus::toolkit::CommodityProducer {
 #pragma cyclus note { \
-"niche": "reactor", \
+"niche": "bamreactor", \
 "doc": \
 "Reactor is a simple, general reactor based on static compositional" \
 " transformations to model fuel burnup.  The user specifies a set of input" \

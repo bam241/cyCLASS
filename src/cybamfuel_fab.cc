@@ -75,14 +75,14 @@ namespace cybam {
 
 
     //________________________________________________________________________
-    FuelFab::FuelFab(cyclus::Context* ctx)
+    cybamFuelFab::cybamFuelFab(cyclus::Context* ctx)
     : cyclus::Facility(ctx), fill_size(0), fiss_size(0), throughput(0) {
         cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
-                                                   "the FuelFab archetype "
+                                                   "the cybamFuelFab archetype "
                                                    "is experimental");
     }
 
-    void FuelFab::EnterNotify() {
+    void cybamFuelFab::EnterNotify() {
         cyclus::Facility::EnterNotify();
 
         if (fiss_commod_prefs.empty()) {
@@ -109,7 +109,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    std::set<cyclus::RequestPortfolio<Material>::Ptr> FuelFab::GetMatlRequests() {
+    std::set<cyclus::RequestPortfolio<Material>::Ptr> cybamFuelFab::GetMatlRequests() {
         using cyclus::RequestPortfolio;
 
         std::set< RequestPortfolio<Material>::Ptr > ports;
@@ -170,7 +170,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void FuelFab::AcceptMatlTrades(const std::vector<
+    void cybamFuelFab::AcceptMatlTrades(const std::vector<
                                    std::pair<cyclus::Trade<Material>,
                                    Material::Ptr> >& responses) {
         std::vector< std::pair <cyclus::Trade<cyclus::Material>, cyclus::Material::Ptr> >::const_iterator trade;
@@ -185,7 +185,7 @@ namespace cybam {
             } else if (req_inventories_[req] == "fiss") {
                 fiss.Push(m);
             } else {
-                throw cyclus::ValueError("cybam::FuelFab was overmatched on requests");
+                throw cyclus::ValueError("cybam::cybamFuelFab was overmatched on requests");
             }
         }
 
@@ -202,7 +202,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
+    std::set<cyclus::BidPortfolio<Material>::Ptr> cybamFuelFab::GetMatlBids(
                                                                        cyclus::CommodMap<Material>::type& commod_requests) {
         using cyclus::BidPortfolio;
 
@@ -271,7 +271,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void FuelFab::GetMatlTrades(
+    void cybamFuelFab::GetMatlTrades(
                                 const std::vector<cyclus::Trade<Material> >& trades,
                                 std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
                                 responses) {
@@ -290,7 +290,7 @@ namespace cybam {
             tot += qty;
             if (tot > throughput + cyclus::eps()) {
                 std::stringstream ss;
-                ss << "FuelFab was matched above throughput limit: " << tot << " > "
+                ss << "cybamFuelFab was matched above throughput limit: " << tot << " > "
                 << throughput;
                 throw cyclus::ValueError(ss.str());
             }
@@ -314,8 +314,8 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    extern "C" cyclus::Agent* ConstructFuelFab(cyclus::Context* ctx) {
-        return new FuelFab(ctx);
+    extern "C" cyclus::Agent* ConstructcybamFuelFab(cyclus::Context* ctx) {
+        return new cybamFuelFab(ctx);
     }
 
     // Convert an atom frac (n1/(n1+n2) to a mass frac (m1/(m1+m2) given
