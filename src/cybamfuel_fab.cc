@@ -6,6 +6,9 @@ using cyclus::Material;
 using cyclus::Composition;
 using pyne::simple_xs;
 
+//#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
+#define DBGL		;
+
 #define SHOW(X)                                                     \
 std::cout << std::setprecision(17) << __FILE__ << ":" << __LINE__ \
 << ": " #X " = " << X << "\n"
@@ -77,12 +80,17 @@ namespace cybam {
     //________________________________________________________________________
     cybamFuelFab::cybamFuelFab(cyclus::Context* ctx)
     : cyclus::Facility(ctx), fill_size(0), fiss_size(0), throughput(0) {
+        DBGL
         cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
                                                    "the cybamFuelFab archetype "
                                                    "is experimental");
+        MyBUSolver = new MLPBUsolver();
+
+DBGL
     }
 
     void cybamFuelFab::EnterNotify() {
+        DBGL
         cyclus::Facility::EnterNotify();
 
         if (fiss_commod_prefs.empty()) {
@@ -106,12 +114,14 @@ namespace cybam {
             << " fill_commod_prefs vals, expected " << fill_commods.size();
             throw cyclus::ValidationError(ss.str());
         }
+        DBGL
     }
 
     //________________________________________________________________________
     std::set<cyclus::RequestPortfolio<Material>::Ptr> cybamFuelFab::GetMatlRequests() {
         using cyclus::RequestPortfolio;
 
+        DBGL
         std::set< RequestPortfolio<Material>::Ptr > ports;
 
         bool exclusive = false;
@@ -156,24 +166,28 @@ namespace cybam {
             ports.insert(port);
         }
 
-        return ports;
+        DBGL
+      return ports;
     }
 
     //________________________________________________________________________
     bool Contains(std::vector<std::string> vec, std::string s) {
+        DBGL
         for (int i = 0; i < vec.size(); i++) {
             if (vec[i] == s) {
                 return true;
             }
         }
-        return false;
+        DBGL
+       return false;
     }
 
     //________________________________________________________________________
     void cybamFuelFab::AcceptMatlTrades(const std::vector<
                                    std::pair<cyclus::Trade<Material>,
                                    Material::Ptr> >& responses) {
-        std::vector< std::pair <cyclus::Trade<cyclus::Material>, cyclus::Material::Ptr> >::const_iterator trade;
+        DBGL
+       std::vector< std::pair <cyclus::Trade<cyclus::Material>, cyclus::Material::Ptr> >::const_iterator trade;
 
         for (trade = responses.begin(); trade != responses.end(); ++trade) {
             std::string commod = trade->first.request->commodity();
@@ -199,11 +213,13 @@ namespace cybam {
         if (fiss.count() > 1) {
             fiss.Push(cyclus::toolkit::Squash(fiss.PopN(fiss.count())));
         }
+        DBGL
     }
 
     //________________________________________________________________________
     std::set<cyclus::BidPortfolio<Material>::Ptr> cybamFuelFab::GetMatlBids(
                                                                        cyclus::CommodMap<Material>::type& commod_requests) {
+        DBGL
         using cyclus::BidPortfolio;
 
         std::set<BidPortfolio<Material>::Ptr> ports;
@@ -267,6 +283,7 @@ namespace cybam {
         cyclus::CapacityConstraint<Material> cc(throughput);
         port->AddConstraint(cc);
         ports.insert(port);
+        DBGL
         return ports;
     }
 
@@ -276,6 +293,7 @@ namespace cybam {
                                 std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
                                 responses) {
         using cyclus::Trade;
+        DBGL
 
         // guard against cases where a buffer is empty - this is okay because some trades
         // may not need that particular buffer.
@@ -311,11 +329,13 @@ namespace cybam {
                 responses.push_back(std::make_pair(trades[i], fiss.Pop(fissqty)));
             } 
         }
-    }
+        DBGL
+   }
 
     //________________________________________________________________________
     extern "C" cyclus::Agent* ConstructcybamFuelFab(cyclus::Context* ctx) {
-        return new cybamFuelFab(ctx);
+        DBGL
+       return new cybamFuelFab(ctx);
     }
 
     // Convert an atom frac (n1/(n1+n2) to a mass frac (m1/(m1+m2) given

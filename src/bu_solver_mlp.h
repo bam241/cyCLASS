@@ -30,7 +30,7 @@ namespace cybam {
 
 
         // Create a TMWA input with the compistion of both stream and the targeted BU..
-        TTree* CreateTMVAInputTree(cyclus::Composition::Ptr c_fissil,
+        void UpdateInputComposition(cyclus::Composition::Ptr c_fissil,
                                    cyclus::Composition::Ptr c_fertil,
                                    double BurnUp);
 
@@ -50,6 +50,15 @@ namespace cybam {
         cyclus::Composition::Ptr fissil_list; // list of nuclei composing the fissil stream
         cyclus::Composition::Ptr fertil_list; // list of nuclei composing the fertil stream
 
+        float Pu8;
+        float Pu9;
+        float Pu10;
+        float Pu11;
+        float Pu12;
+        float Am1;
+        float BU;
+        float U5_enrichment;
+
         TMVA::Reader *reader;
         std::string TMVAWeightFile;
 
@@ -61,10 +70,6 @@ namespace cybam {
     cyclus::Composition::Ptr ExtractAccordinglist( cyclus::Composition::Ptr source, cyclus::Composition::Ptr list);
     CompMap NormalizeComp( CompMap source, double norm = 1);
 
- /*   CompMap operator*(Nuc const& zai, double F) ;
-    CompMap operator*(double F, Nuc const& zai) { return zai * F; };
-    CompMap operator/(Nuc const& zai, double F) { return zai * (1/F); };
-*/
     CompMap operator+(CompMap const& IVa, CompMap const& IVb);
     CompMap operator*(CompMap const& IVA, double F);
     CompMap operator*(double F, CompMap const& IVA);
@@ -72,7 +77,6 @@ namespace cybam {
     CompMap operator-(CompMap const& IVa, CompMap const& IVb);
     CompMap operator/(CompMap const& IVA, double F);
 
-//    CompMap operator*(CompMap const& IVa, CompMap const& IVb);
 
 
 } // namespace cybam

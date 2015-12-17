@@ -130,6 +130,7 @@ namespace cybam {
 
 #pragma cyclus decl
 
+        
     private:
         std::string fuel_incommod(cyclus::Material::Ptr m);
         std::string fuel_outcommod(cyclus::Material::Ptr m);
@@ -279,12 +280,6 @@ namespace cybam {
 }
         int n_assem_core;
 
-#pragma cyclus var { \
-"doc": "Discharge burnup [GWd/t].",	\
-"uilabel": "discharge burnup", \
-"units": "GWd/t", \
-}
-        double burnup;
 
 
 #pragma cyclus var { \
@@ -305,6 +300,14 @@ namespace cybam {
         int n_assem_spent;
 
         ///////// cycle params ///////////
+#pragma cyclus var { \
+"doc": "Discharge burnup.",	\
+"uilabel": "Discharge burnup", \
+"units": "GWd/t", \
+}
+        double burnup;
+
+
 #pragma cyclus var { \
 "doc": "The duration of a full operational cycle (excluding refueling " \
 "time) in time steps.", \

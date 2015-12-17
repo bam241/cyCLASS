@@ -201,32 +201,6 @@ namespace cybam {
 "default": "", \
 "uitype": "incommodity", \
 }
-/*        std::string topup_commod;
-#pragma cyclus var { \
-"doc": "Top-up material stream request preference.", \
-"uilabel": "Top-up Stream Preference", \
-"default": 1.0, \
-}
-        double topup_pref; // default must be in range (0, cyclus::kDefaultPref)
-
-#pragma cyclus var { \
-"doc": "Name of recipe to be used in top-up material stream requests." \
-" This MUST be set if 'topup_size > 0'.", \
-"uilabel": "Top-up Stream Recipe", \
-"uitype": "recipe", \
-"default": "", \
-}
-        std::string topup_recipe;
-#pragma cyclus var { \
-"doc": "Size of top-up material stream inventory.", \
-"uilabel": "Top-up Stream Inventory Capacity", \
-"units": "kg", \
-"default": 0, \
-}
-        double topup_size;
-#pragma cyclus var {"capacity": "topup_size"}
-        cyclus::toolkit::ResBuf<cyclus::Material> topup;
-*/
 
 #pragma cyclus var { \
 "doc": "Commodity on which to offer/supply mixed fuel material.", \
