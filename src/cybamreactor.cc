@@ -10,9 +10,6 @@ using cyclus::ValueError;
 using cyclus::Request;
 
 
-#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
-//#define DBGL		;
-
 typedef std::map<cyclus::Nuc, double> CompMap;
 
 namespace cybam {
@@ -56,7 +53,7 @@ namespace cybam {
     void cybamReactor::InitFrom(cybamReactor* m) {
 #pragma cyclus impl initfromcopy cybam::cybamReactor
         cyclus::toolkit::CommodityProducer::Copy(m);
-   }
+    }
 
     //________________________________________________________________________
     void cybamReactor::InitFrom(cyclus::QueryableBackend* b) {
@@ -66,11 +63,10 @@ namespace cybam {
         tk::CommodityProducer::Add(tk::Commodity(power_name),
                                    tk::CommodInfo(power_cap, power_cap));
 
-   }
+    }
 
     //________________________________________________________________________
     void cybamReactor::EnterNotify() {
-        DBGL
         cyclus::Facility::EnterNotify();
 
         // If the user ommitted fuel_prefs, we set it to zeros for each fuel
@@ -82,19 +78,16 @@ namespace cybam {
         }
 
 
-        DBGL
     }
 
     //________________________________________________________________________
     bool cybamReactor::CheckDecommissionCondition() {
-        DBGL
         return core.count() == 0 && spent.count() == 0;
     }
 
     //________________________________________________________________________
     void cybamReactor::Tick() {
-        DBGL
-      // The following code must go in the Tick so they fire on the time step
+        // The following code must go in the Tick so they fire on the time step
         // following the cycle_step update - allowing for the all reactor events to
         // occur and be recorded on the "beginning" of a time step.  Another reason
         // they
@@ -162,13 +155,11 @@ namespace cybam {
             }
         }
 
-        DBGL
-   }
+    }
 
     //________________________________________________________________________
     std::set<cyclus::RequestPortfolio<Material>::Ptr> cybamReactor::GetMatlRequests() {
         using cyclus::RequestPortfolio;
-        DBGL
 
         std::set<RequestPortfolio<Material>::Ptr> ports;
         Material::Ptr m;
@@ -203,31 +194,31 @@ namespace cybam {
                 std::string commod = fuel_incommods[j];
                 double pref = fuel_prefs[j];
 
-                
+
                 //Defining the Stream composition
                 CompMap fissil_comp;
-                fissil_comp.insert(std::pair<Nuc, double>(942380000,3));
-                fissil_comp.insert(std::pair<Nuc, double>(942390000,15));
-                fissil_comp.insert(std::pair<Nuc, double>(942400000,10));
-                fissil_comp.insert(std::pair<Nuc, double>(942410000,8));
-                fissil_comp.insert(std::pair<Nuc, double>(942420000,5));
-                fissil_comp.insert(std::pair<Nuc, double>(952410000,2));
-                NormalizeComp(fissil_comp);
+                fissil_comp.insert(std::pair<Nuc, double>(942380000,0.28));
+                fissil_comp.insert(std::pair<Nuc, double>(942390000,4.65));
+                fissil_comp.insert(std::pair<Nuc, double>(942400000,2.19));
+                fissil_comp.insert(std::pair<Nuc, double>(942410000,1.06));
+                fissil_comp.insert(std::pair<Nuc, double>(942420000,0.73));
+                fissil_comp.insert(std::pair<Nuc, double>(952410000,0.1));
+                fissil_comp =  NormalizeComp(fissil_comp);
 
 
                 CompMap fertil_comp;
-                fertil_comp.insert(std::pair<Nuc, double>(922380000,0.25));
-                fertil_comp.insert(std::pair<Nuc, double>(922380000,100));
-                cybam::NormalizeComp(fertil_comp);
+                fertil_comp.insert(std::pair<Nuc, double>(922350000,0.25));
+                fertil_comp.insert(std::pair<Nuc, double>(922380000,99.75));
+                fertil_comp =  cybam::NormalizeComp(fertil_comp);
+
+                burnup = 50; //temporary force the BUrnup to be 50....
 
                 Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
                 Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
-                DBGL
-              double Enrch = MyBUSolver->GetEnrichment(fissil_stream, fertil_stream, burnup );
+                double Enrch = MyBUSolver->GetEnrichment(fissil_stream, fertil_stream, burnup );
 
-                DBGL
-              Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
+                Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
                 m = Material::CreateUntracked(assem_size, fuel);
 
@@ -237,18 +228,16 @@ namespace cybam {
             port->AddMutualReqs(mreqs);
             ports.insert(port);
         }
-        DBGL
 
         return ports;
     }
 
     //________________________________________________________________________
     void cybamReactor::GetMatlTrades(
-                                const std::vector<cyclus::Trade<Material> >& trades,
-                                std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
-                                responses) {
+                                     const std::vector<cyclus::Trade<Material> >& trades,
+                                     std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
+                                     responses) {
         using cyclus::Trade;
-        DBGL
 
         std::map<std::string, MatVec> mats = PopSpent();
         for (int i = 0; i < trades.size(); i++) {
@@ -259,15 +248,13 @@ namespace cybam {
             res_indexes.erase(m->obj_id());
         }
         PushSpent(mats);  // return leftovers back to spent buffer
-        DBGL
-   }
+    }
 
     //________________________________________________________________________
     void cybamReactor::AcceptMatlTrades(const std::vector<
-                                   std::pair<cyclus::Trade<Material>, Material::Ptr> >& responses) {
+                                        std::pair<cyclus::Trade<Material>, Material::Ptr> >& responses) {
         std::vector<std::pair<cyclus::Trade<cyclus::Material>,
         cyclus::Material::Ptr> >::const_iterator trade;
-        DBGL
 
         std::stringstream ss;
         int nload = std::min((int)responses.size(), n_assem_core - core.count());
@@ -287,14 +274,12 @@ namespace cybam {
                 fresh.Push(m);
             }
         }
-        DBGL
-   }
+    }
 
     //________________________________________________________________________
     std::set<cyclus::BidPortfolio<Material>::Ptr> cybamReactor::GetMatlBids(
-                                                                       cyclus::CommodMap<Material>::type& commod_requests) {
+                                                                            cyclus::CommodMap<Material>::type& commod_requests) {
         using cyclus::BidPortfolio;
-        DBGL
 
         std::set<BidPortfolio<Material>::Ptr> ports;
 
@@ -346,7 +331,6 @@ namespace cybam {
             ports.insert(port);
         }
 
-        DBGL
         return ports;
     }
 
@@ -355,7 +339,6 @@ namespace cybam {
         if (retired()) {
             return;
         }
-        DBGL
 
         if (cycle_step >= cycle_time + refuel_time && core.count() == n_assem_core) {
             discharged = false;
@@ -378,7 +361,6 @@ namespace cybam {
         if (cycle_step > 0 || core.count() == n_assem_core) {
             cycle_step++;
         }
-        DBGL
     }
 
     //________________________________________________________________________
@@ -386,8 +368,7 @@ namespace cybam {
 
     //________________________________________________________________________
     void cybamReactor::Transmute(int n_assem) {
-        DBGL
-       MatVec old = core.PopN(std::min(n_assem, core.count()));
+        MatVec old = core.PopN(std::min(n_assem, core.count()));
         core.Push(old);
         if (core.count() > old.size()) {
             // rotate untransmuted mats back to back of buffer
@@ -401,12 +382,10 @@ namespace cybam {
         for (int i = 0; i < old.size(); i++) {
             old[i]->Transmute(context()->GetRecipe(fuel_outrecipe(old[i])));
         }
-        DBGL
     }
 
     //________________________________________________________________________
     std::map<std::string, MatVec> cybamReactor::PeekSpent() {
-        DBGL
         std::map<std::string, MatVec> mapped;
         MatVec mats = spent.PopN(spent.count());
         spent.Push(mats);
@@ -414,14 +393,12 @@ namespace cybam {
             std::string commod = fuel_outcommod(mats[i]);
             mapped[commod].push_back(mats[i]);
         }
-        DBGL
         return mapped;
     }
 
     //________________________________________________________________________
     bool cybamReactor::Discharge() {
-        DBGL
-       int npop = std::min(n_assem_batch, core.count());
+        int npop = std::min(n_assem_batch, core.count());
         if (n_assem_spent - spent.count() < npop) {
             Record("DISCHARGE", "failed");
             return false;  // not enough room in spent buffer
@@ -432,14 +409,12 @@ namespace cybam {
         Record("DISCHARGE", ss.str());
 
         spent.Push(core.PopN(npop));
-        DBGL
-       return true;
+        return true;
     }
 
     //________________________________________________________________________
     void cybamReactor::Load() {
-        DBGL
-       int n = std::min(n_assem_core - core.count(), fresh.count());
+        int n = std::min(n_assem_core - core.count(), fresh.count());
         if (n == 0) {
             return;
         }
@@ -448,79 +423,67 @@ namespace cybam {
         ss << n << " assemblies";
         Record("LOAD", ss.str());
         core.Push(fresh.PopN(n));
-        DBGL
-   }
+    }
 
     //________________________________________________________________________
     std::string cybamReactor::fuel_incommod(Material::Ptr m) {
-        DBGL
-      int i = res_indexes[m->obj_id()];
+        int i = res_indexes[m->obj_id()];
         if (i >= fuel_incommods.size()) {
             throw KeyError("cybam::cybamReactor - no incommod for material object");
         }
-        DBGL
         return fuel_incommods[i];
     }
 
     //________________________________________________________________________
     std::string cybamReactor::fuel_outcommod(Material::Ptr m) {
-        DBGL
-      int i = res_indexes[m->obj_id()];
+        int i = res_indexes[m->obj_id()];
         if (i >= fuel_outcommods.size()) {
             throw KeyError("cybam::cybamReactor - no outcommod for material object");
         }
-        DBGL
-       return fuel_outcommods[i];
+        return fuel_outcommods[i];
     }
 
-/*    //________________________________________________________________________
-    std::string cybamReactor::fuel_inrecipe(Material::Ptr m) {
-        int i = res_indexes[m->obj_id()];
-        if (i >= fuel_inrecipes.size()) {
-            throw KeyError("cybam::cybamReactor - no inrecipe for material object");
-        }
-        return fuel_inrecipes[i];
-    }
-*/
+    /*    //________________________________________________________________________
+     std::string cybamReactor::fuel_inrecipe(Material::Ptr m) {
+     int i = res_indexes[m->obj_id()];
+     if (i >= fuel_inrecipes.size()) {
+     throw KeyError("cybam::cybamReactor - no inrecipe for material object");
+     }
+     return fuel_inrecipes[i];
+     }
+     */
     //________________________________________________________________________
     std::string cybamReactor::fuel_outrecipe(Material::Ptr m) {
-        DBGL
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_outrecipes.size()) {
             throw KeyError("cybam::cybamReactor - no outrecipe for material object");
         }
-        DBGL
         return fuel_outrecipes[i];
     }
 
     //________________________________________________________________________
     double cybamReactor::fuel_pref(Material::Ptr m) {
-        DBGL
-       int i = res_indexes[m->obj_id()];
+        int i = res_indexes[m->obj_id()];
         if (i >= fuel_prefs.size()) {
             return 0;
         }
-        DBGL
-       return fuel_prefs[i];
+        return fuel_prefs[i];
     }
 
     //________________________________________________________________________
     void cybamReactor::index_res(cyclus::Resource::Ptr m, std::string incommod) {
-        DBGL
         for (int i = 0; i < fuel_incommods.size(); i++) {
             if (fuel_incommods[i] == incommod) {
                 res_indexes[m->obj_id()] = i;
                 return;
             }
         }
-        DBGL
-      throw ValueError(
+        throw ValueError(
                          "cybam::cybamReactor - received unsupported incommod material");
     }
 
     //________________________________________________________________________
     std::map<std::string, MatVec> cybamReactor::PopSpent() {
-        DBGL
         MatVec mats = spent.PopN(spent.count());
         std::map<std::string, MatVec> mapped;
         for (int i = 0; i < mats.size(); i++) {
@@ -533,22 +496,19 @@ namespace cybam {
         for (it = mapped.begin(); it != mapped.end(); ++it) {
             std::reverse(it->second.begin(), it->second.end());
         }
-        DBGL
-       return mapped;
+        return mapped;
     }
 
     //________________________________________________________________________
     void cybamReactor::PushSpent(std::map<std::string, MatVec> leftover) {
-        DBGL
         std::map<std::string, MatVec>::iterator it;
         for (it = leftover.begin(); it != leftover.end(); ++it) {
             // undo reverse in PopSpent to make sure oldest assemblies come out first
             std::reverse(it->second.begin(), it->second.end());
             spent.Push(it->second);
-            DBGL
         }
     }
-    
+
     //________________________________________________________________________
     void cybamReactor::Record(std::string name, std::string val) {
         context()

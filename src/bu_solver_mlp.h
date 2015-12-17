@@ -29,10 +29,6 @@ namespace cybam {
         ~MLPBUsolver();
 
 
-        // Create a TMWA input with the compistion of both stream and the targeted BU..
-        void UpdateInputComposition(cyclus::Composition::Ptr c_fissil,
-                                   cyclus::Composition::Ptr c_fertil,
-                                   double BurnUp);
 
         // Lauch the MLP (using TMVA) to predict the requeirt fissil enrichment (according to the compisition of fissil and fertil stream and the targeted burnup)
         double GetEnrichment(cyclus::Composition::Ptr c_fissil,
@@ -62,6 +58,11 @@ namespace cybam {
         TMVA::Reader *reader;
         std::string TMVAWeightFile;
 
+        // Create a TMWA input with the compistion of both stream and the targeted BU..
+        void UpdateInputComposition(cyclus::Composition::Ptr c_fissil,
+                                    cyclus::Composition::Ptr c_fertil,
+                                    double BurnUp);
+
 
     };
 
@@ -69,6 +70,10 @@ namespace cybam {
     double AtomIn(cyclus::Composition::Ptr Source);
     cyclus::Composition::Ptr ExtractAccordinglist( cyclus::Composition::Ptr source, cyclus::Composition::Ptr list);
     CompMap NormalizeComp( CompMap source, double norm = 1);
+    void Print(cyclus::Composition::Ptr compo);
+    void Print(CompMap compo);
+
+
 
     CompMap operator+(CompMap const& IVa, CompMap const& IVb);
     CompMap operator*(CompMap const& IVA, double F);

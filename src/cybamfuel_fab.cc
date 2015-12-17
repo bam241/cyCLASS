@@ -30,7 +30,7 @@ namespace cybam {
             Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, c_fiss_);
             Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, c_fill_);
 
-            if(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) != AtomIn(fuel)){
+            if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-6 ){
                 std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
                 exit(1);
             }
@@ -61,7 +61,7 @@ namespace cybam {
             Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, c_fiss_);
             Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, c_fill_);
 
-            if(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) != AtomIn(fuel)){
+            if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-6 ){
                 std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
                 exit(1);
             }
@@ -244,16 +244,21 @@ DBGL
             c_fiss = fiss.Peek()->comp();
         } else if (!fiss_recipe.empty()) {
             c_fiss = context()->GetRecipe(fiss_recipe);
+        } else {
+            return ports;
         }
 
         BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
         for (int j = 0; j < reqs.size(); j++) {
-            cyclus::Request<Material>* req = reqs[j];
+            DBGL
+          cyclus::Request<Material>* req = reqs[j];
 
             Composition::Ptr tgt = req->target()->comp();
             double tgt_qty = req->target()->quantity();
             double BU_tgt = MyBUSolver->GetBU(tgt);
+
             double fiss_frac = MyBUSolver->GetEnrichment(c_fiss, c_fill, BU_tgt);
+
             double fill_frac = 1 - fiss_frac;
 
 
@@ -267,6 +272,7 @@ DBGL
 
             bool exclusive = false;
             port->AddBid(req, m1, this, exclusive);
+            DBGL
         }
 
         cyclus::Converter<Material>::Ptr fissconv( new FissConverter(c_fill, c_fiss) );

@@ -12,14 +12,14 @@ using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
 
-#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
-//#define DBGL		;
+//#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
+#define DBGL		;
 
 namespace cybam {
 
     //________________________________________________________________________
     MLPBUsolver::MLPBUsolver(std::string inputfile){
-DBGL
+        DBGL
         TMVAWeightFile = inputfile;
         reader = new TMVA::Reader( "Silent" );
 
@@ -36,7 +36,21 @@ DBGL
         TString methodName = "MLP method";
         reader->BookMVA( methodName, TMVAWeightFile );
 
-DBGL
+
+        CompMap fissil;
+        fissil.insert(std::pair<Nuc, double>(942380000,1));
+        fissil.insert(std::pair<Nuc, double>(942390000,1));
+        fissil.insert(std::pair<Nuc, double>(942400000,1));
+        fissil.insert(std::pair<Nuc, double>(942410000,1));
+        fissil.insert(std::pair<Nuc, double>(942420000,1));
+        fissil.insert(std::pair<Nuc, double>(952410000,1));
+        fissil_list = Composition::CreateFromAtom(fissil);
+
+        CompMap fertil;
+        fertil.insert(std::pair<Nuc, double>(922350000,1));
+        fertil.insert(std::pair<Nuc, double>(922380000,1));
+        fertil_list = Composition::CreateFromAtom(fertil);
+        DBGL
     }
 
     //________________________________________________________________________
@@ -46,8 +60,8 @@ DBGL
 
     //________________________________________________________________________
     void MLPBUsolver::UpdateInputComposition(cyclus::Composition::Ptr c_fissil,
-                                            cyclus::Composition::Ptr c_fertil,
-                                            double BurnUp) {
+                                             cyclus::Composition::Ptr c_fertil,
+                                             double BurnUp) {
         DBGL;
 
         Pu8  = 0;
@@ -84,7 +98,7 @@ DBGL
             } else if (nuc == 952410000) {
                 Am1 = Q;
             } else  {
-                std::cout << "Pb exception... BAD Pu stream" << std::endl;
+                std::cout << "Pb exception... BAD Pu stream nuclei " << nuc << std::endl;
             }
         }
 
@@ -127,17 +141,9 @@ DBGL
     double MLPBUsolver::GetEnrichment(cyclus::Composition::Ptr c_fissil,
                                       cyclus::Composition::Ptr c_fertil,
                                       double BurnUp){
-
         DBGL
-     // Create a set of variables and declare them to the reader
-        // - the variable names MUST corresponds in name and type to those given in the weight file(s) used
 
-
-        // Book method MLP
         UpdateInputComposition(c_fissil, c_fertil, BurnUp);
-
-
-        DBGL
 
         Float_t val = (reader->EvaluateRegression(  "MLP method" ))[0];
 
@@ -154,22 +160,30 @@ DBGL
 
     double BU_max = 60;
     double BU_min = 20;
+    DBGL
+
 
     cyclus::Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, fissil_list);
     cyclus::Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, fertil_list);
 
-    if(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) != AtomIn(fuel)){
+
+    
+    if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-6 ){
         std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
         exit(1);
     }
+    DBGL
 
 
     double rho_target = AtomIn(fuel_fissil)/AtomIn(fuel);
+
+    DBGL
 
     double rho_min = GetEnrichment(fuel_fissil, fuel_fertil, BU_min);
     double rho_max = GetEnrichment(fuel_fissil, fuel_fertil, BU_max);
     double BU_estimation = 0;
     double rho_estimated = 0;
+    DBGL
 
 
     do {
@@ -178,23 +192,22 @@ DBGL
 
         rho_estimated = GetEnrichment(fuel_fissil, fuel_fertil, BU_estimation);
 
-        if(rho_estimated == rho_target){
+        if( rho_estimated == rho_target ){
 
             return BU_estimation;
 
         } else if (rho_estimated > rho_target){
-
-            rho_min = rho_estimated;
-            BU_min = BU_estimation;
-
-        } else {
-
             rho_max = rho_estimated;
             BU_max = BU_estimation;
 
+        } else {
+            rho_min = rho_estimated;
+            BU_min = BU_estimation;
+
+
         }
 
-    }while( std::abs(rho_target - rho_estimated) > eps );
+    }while( std::abs(rho_target - rho_estimated)/rho_target > eps );
 
     DBGL
     return BU_estimation;
@@ -252,16 +265,6 @@ DBGL
         return source;
     }
 
-
-    //________________________________________________________________________
-/*    CompMap operator*(Nuc const& zai, double F) {
-
-        CompMap IVtmp;
-        IVtmp.insert(std::pair<Nuc, double> (zai, F));
-
-        return IVtmp;
-    }
-*/
     //________________________________________________________________________
     CompMap operator+( CompMap const& IVa, CompMap const& IVb){
 
@@ -286,23 +289,37 @@ DBGL
 
         CompMap IVtmp = IVA;
         CompMap::iterator it;
-        
+
         for(it = IVtmp.begin(); it != IVtmp.end(); it++)
-            IVtmp.insert(std::pair<Nuc, double> (it->first, it->second *F));
-        
+            it->second *= F;
+
         return IVtmp;
     }
-    
-    CompMap operator-(CompMap const& IVa, CompMap const& IVb) { return IVa + (-1*IVb); };
-    CompMap operator/(CompMap const& IVA, double F) { return IVA * (1/F); };
-    CompMap operator*(double F, CompMap const& IVA) { return IVA*F; };
 
-    
-    
     //________________________________________________________________________
-    
-    
-    
-    
-    
+    void Print(cyclus::Composition::Ptr compo ){
+        Print(compo->atom());
+    }
+
+    //________________________________________________________________________
+    void Print(CompMap compo){
+        CompMap::iterator it;
+
+        for (it = compo.begin(); it != compo.end(); it++){
+            std::cout << it->first << " " << it->second << std::endl;
+        }
+    }
+
+CompMap operator-(CompMap const& IVa, CompMap const& IVb) { return IVa + (-1*IVb); };
+CompMap operator/(CompMap const& IVA, double F) { return IVA * (1/F); };
+CompMap operator*(double F, CompMap const& IVA) { return IVA*F; };
+
+
+
+//________________________________________________________________________
+
+
+
+
+
 } // namespace cybam
