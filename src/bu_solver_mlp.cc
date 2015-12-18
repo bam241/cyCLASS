@@ -138,7 +138,7 @@ namespace cybam {
 
 
     //________________________________________________________________________
-    double MLPBUsolver::GetEnrichment(cyclus::Composition::Ptr c_fissil,
+    float MLPBUsolver::GetEnrichment(cyclus::Composition::Ptr c_fissil,
                                       cyclus::Composition::Ptr c_fertil,
                                       double BurnUp){
         DBGL
@@ -149,17 +149,17 @@ namespace cybam {
 
         DBGL
 
-        return (double)val; //
+        return (float)val; //
     }
 
 
     //________________________________________________________________________
-    double MLPBUsolver::GetBU(cyclus::Composition::Ptr fuel, double eps)
+    float MLPBUsolver::GetBU(cyclus::Composition::Ptr fuel, double eps)
     {
     DBGL
 
-    double BU_max = 60;
-    double BU_min = 20;
+    float BU_max = 60;
+    float BU_min = 20;
     DBGL
 
 
@@ -175,39 +175,35 @@ namespace cybam {
     DBGL
 
 
-    double rho_target = AtomIn(fuel_fissil)/AtomIn(fuel);
+    float rho_target = AtomIn(fuel_fissil)/AtomIn(fuel);
 
     DBGL
 
-    double rho_min = GetEnrichment(fuel_fissil, fuel_fertil, BU_min);
-    double rho_max = GetEnrichment(fuel_fissil, fuel_fertil, BU_max);
-    double BU_estimation = 0;
-    double rho_estimated = 0;
+    float rho_min = GetEnrichment(fuel_fissil, fuel_fertil, BU_min);
+    float rho_max = GetEnrichment(fuel_fissil, fuel_fertil, BU_max);
+    float BU_estimation = BU_max;
+    float rho_estimated = rho_max;
     DBGL
 
 
     do {
         //Update BU_estimation
-        BU_estimation = (BU_max+BU_min)/2;
 
-        rho_estimated = GetEnrichment(fuel_fissil, fuel_fertil, BU_estimation);
-
-        if( rho_estimated == rho_target ){
-
-            return BU_estimation;
-
-        } else if (rho_estimated > rho_target){
+        if (rho_estimated > rho_target){
             rho_max = rho_estimated;
             BU_max = BU_estimation;
 
         } else {
             rho_min = rho_estimated;
             BU_min = BU_estimation;
-
-
         }
 
-    }while( std::abs(rho_target - rho_estimated)/rho_target > eps );
+        BU_estimation = (BU_max+BU_min)/2.;
+
+        rho_estimated = GetEnrichment(fuel_fissil, fuel_fertil, BU_estimation);
+
+
+    }while( std::abs(rho_target - rho_estimated)/(rho_target/2.+rho_estimated/2.) > eps );
 
     DBGL
     return BU_estimation;

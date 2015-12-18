@@ -268,10 +268,6 @@ DBGL
 
             Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
             m1->Absorb(m2);
-            std::cout << fiss_frac<< std::endl;
-            Print(c_fill);
-            std::cout << fill_frac<< std::endl;
-            Print(m1->comp());
 
             bool exclusive = false;
             port->AddBid(req, m1, this, exclusive);
