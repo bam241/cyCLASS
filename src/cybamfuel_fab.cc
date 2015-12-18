@@ -30,7 +30,7 @@ namespace cybam {
             Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, c_fiss_);
             Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, c_fill_);
 
-            if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-6 ){
+            if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-10 ){
                 std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
                 exit(1);
             }
@@ -61,7 +61,7 @@ namespace cybam {
             Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, c_fiss_);
             Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, c_fill_);
 
-            if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-6 ){
+            if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-10 ){
                 std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
                 exit(1);
             }
@@ -239,14 +239,15 @@ DBGL
             c_fill = context()->GetRecipe(fill_recipe);
         }
 
-        Composition::Ptr c_fiss = c_fill;
+        Composition::Ptr c_fiss;
         if (fiss.count() > 0) {
             c_fiss = fiss.Peek()->comp();
         } else if (!fiss_recipe.empty()) {
             c_fiss = context()->GetRecipe(fiss_recipe);
-        } else {
+        } else{
             return ports;
         }
+
 
         BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
         for (int j = 0; j < reqs.size(); j++) {
@@ -259,16 +260,20 @@ DBGL
 
             double fiss_frac = MyBUSolver->GetEnrichment(c_fiss, c_fill, BU_tgt);
 
-            double fill_frac = 1 - fiss_frac;
 
+            double fill_frac = 1 - fiss_frac;
 
             fiss_frac = AtomToMassFrac(fiss_frac, c_fiss, c_fill);
             fill_frac = AtomToMassFrac(fill_frac, c_fill, c_fiss);
             
             Material::Ptr m1 = Material::CreateUntracked(fiss_frac * tgt_qty, c_fiss);
+
             Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
             m1->Absorb(m2);
-
+            std::cout << fiss_frac<< std::endl;
+            Print(c_fill);
+            std::cout << fill_frac<< std::endl;
+            Print(m1->comp());
 
             bool exclusive = false;
             port->AddBid(req, m1, this, exclusive);
@@ -283,6 +288,7 @@ DBGL
                                                    fissconv);
         cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),
                                                    fillconv);
+
         port->AddConstraint(fillc);
         port->AddConstraint(fissc);
 
@@ -333,7 +339,39 @@ DBGL
                     fissqty = std::min(fiss.quantity(), qty);
                 }
                 responses.push_back(std::make_pair(trades[i], fiss.Pop(fissqty)));
-            } 
+            }  else {
+
+                Composition::Ptr c_fiss = fiss.Peek()->comp();
+                Composition::Ptr c_fill = fill.Peek()->comp();
+
+                double BU_tgt = MyBUSolver->GetBU(tgt->comp());
+
+                double fiss_frac = MyBUSolver->GetEnrichment(c_fiss, c_fill, BU_tgt);
+                double fill_frac = 1-fiss_frac;
+
+                //Atomic to mass conversion...
+                fiss_frac =
+                AtomToMassFrac(fiss_frac, fiss.Peek()->comp(), fill.Peek()->comp());
+                fill_frac =
+                AtomToMassFrac(fill_frac, fill.Peek()->comp(), fiss.Peek()->comp());
+
+                double fissqty = fiss_frac*qty;
+                if (std::abs(fissqty - fiss.quantity()) < cyclus::eps()) {
+                    fissqty = std::min(fiss.quantity(), fiss_frac*qty);
+                }
+                double fillqty = fill_frac*qty;
+                if (std::abs(fillqty - fill.quantity()) < cyclus::eps()) {
+                    fillqty = std::min(fill.quantity(), fill_frac*qty);
+                }
+
+                Material::Ptr m = fiss.Pop(fissqty);
+                // this if block prevents zero qty ResBuf pop exceptions
+                if (fill_frac > 0) {
+                    m->Absorb(fill.Pop(fillqty));
+                }
+                responses.push_back(std::make_pair(trades[i], m));
+            }
+
         }
         DBGL
    }

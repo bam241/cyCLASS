@@ -168,7 +168,7 @@ namespace cybam {
 
 
     
-    if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-6 ){
+    if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-10 ){
         std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
         exit(1);
     }

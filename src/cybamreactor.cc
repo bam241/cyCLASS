@@ -8,9 +8,12 @@ using cyclus::toolkit::MatVec;
 using cyclus::KeyError;
 using cyclus::ValueError;
 using cyclus::Request;
+using cyclus::Nuc;
 
+typedef std::map<Nuc, double> CompMap;
 
-typedef std::map<cyclus::Nuc, double> CompMap;
+//#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
+#define DBGL		;
 
 namespace cybam {
 
@@ -87,7 +90,8 @@ namespace cybam {
 
     //________________________________________________________________________
     void cybamReactor::Tick() {
-        // The following code must go in the Tick so they fire on the time step
+        DBGL
+       // The following code must go in the Tick so they fire on the time step
         // following the cycle_step update - allowing for the all reactor events to
         // occur and be recorded on the "beginning" of a time step.  Another reason
         // they
@@ -155,11 +159,13 @@ namespace cybam {
             }
         }
 
+        DBGL
     }
 
     //________________________________________________________________________
     std::set<cyclus::RequestPortfolio<Material>::Ptr> cybamReactor::GetMatlRequests() {
         using cyclus::RequestPortfolio;
+        DBGL
 
         std::set<RequestPortfolio<Material>::Ptr> ports;
         Material::Ptr m;
@@ -205,13 +211,10 @@ namespace cybam {
                 fissil_comp.insert(std::pair<Nuc, double>(952410000,0.1));
                 fissil_comp =  NormalizeComp(fissil_comp);
 
-
                 CompMap fertil_comp;
                 fertil_comp.insert(std::pair<Nuc, double>(922350000,0.25));
                 fertil_comp.insert(std::pair<Nuc, double>(922380000,99.75));
                 fertil_comp =  cybam::NormalizeComp(fertil_comp);
-
-                burnup = 50; //temporary force the BUrnup to be 50....
 
                 Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
                 Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
@@ -229,7 +232,8 @@ namespace cybam {
             ports.insert(port);
         }
 
-        return ports;
+        DBGL
+       return ports;
     }
 
     //________________________________________________________________________
