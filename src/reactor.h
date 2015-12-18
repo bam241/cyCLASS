@@ -52,7 +52,7 @@ namespace cybam {
     /// int) of its assemblies are transmuted to their respective burnt
     /// compositions.
 
-    class cybamReactor : public cyclus::Facility,
+    class Reactor : public cyclus::Facility,
     public cyclus::toolkit::CommodityProducer {
 #pragma cyclus note { \
 "niche": "bamreactor", \
@@ -106,8 +106,8 @@ namespace cybam {
 }
 
     public:
-        cybamReactor(cyclus::Context* ctx);
-        virtual ~cybamReactor(){};
+        Reactor(cyclus::Context* ctx);
+        virtual ~Reactor(){};
 
         virtual void Tick();
         virtual void Tock();

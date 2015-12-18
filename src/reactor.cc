@@ -1,4 +1,4 @@
-#include "cybamreactor.h"
+#include "reactor.h"
 #include "bu_solver_mlp.h"
 
 using cyclus::Material;
@@ -17,7 +17,7 @@ typedef std::map<Nuc, double> CompMap;
 
 namespace cybam {
 
-    cybamReactor::cybamReactor(cyclus::Context* ctx)
+    Reactor::Reactor(cyclus::Context* ctx)
     : cyclus::Facility(ctx),
     n_assem_batch(0),
     assem_size(0),
@@ -38,29 +38,29 @@ namespace cybam {
 
     }
 
-#pragma cyclus def clone cybam::cybamReactor
+#pragma cyclus def clone cybam::Reactor
 
-#pragma cyclus def schema cybam::cybamReactor
+#pragma cyclus def schema cybam::Reactor
 
-#pragma cyclus def annotations cybam::cybamReactor
+#pragma cyclus def annotations cybam::Reactor
 
-#pragma cyclus def infiletodb cybam::cybamReactor
+#pragma cyclus def infiletodb cybam::Reactor
 
-#pragma cyclus def snapshot cybam::cybamReactor
+#pragma cyclus def snapshot cybam::Reactor
 
-#pragma cyclus def snapshotinv cybam::cybamReactor
+#pragma cyclus def snapshotinv cybam::Reactor
 
-#pragma cyclus def initinv cybam::cybamReactor
+#pragma cyclus def initinv cybam::Reactor
 
     //________________________________________________________________________
-    void cybamReactor::InitFrom(cybamReactor* m) {
-#pragma cyclus impl initfromcopy cybam::cybamReactor
+    void Reactor::InitFrom(Reactor* m) {
+#pragma cyclus impl initfromcopy cybam::Reactor
         cyclus::toolkit::CommodityProducer::Copy(m);
     }
 
     //________________________________________________________________________
-    void cybamReactor::InitFrom(cyclus::QueryableBackend* b) {
-#pragma cyclus impl initfromdb cybam::cybamReactor
+    void Reactor::InitFrom(cyclus::QueryableBackend* b) {
+#pragma cyclus impl initfromdb cybam::Reactor
 
         namespace tk = cyclus::toolkit;
         tk::CommodityProducer::Add(tk::Commodity(power_name),
@@ -69,7 +69,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::EnterNotify() {
+    void Reactor::EnterNotify() {
         cyclus::Facility::EnterNotify();
 
         // If the user ommitted fuel_prefs, we set it to zeros for each fuel
@@ -84,12 +84,12 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    bool cybamReactor::CheckDecommissionCondition() {
+    bool Reactor::CheckDecommissionCondition() {
         return core.count() == 0 && spent.count() == 0;
     }
 
     //________________________________________________________________________
-    void cybamReactor::Tick() {
+    void Reactor::Tick() {
         DBGL
        // The following code must go in the Tick so they fire on the time step
         // following the cycle_step update - allowing for the all reactor events to
@@ -163,7 +163,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    std::set<cyclus::RequestPortfolio<Material>::Ptr> cybamReactor::GetMatlRequests() {
+    std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         using cyclus::RequestPortfolio;
         DBGL
 
@@ -237,7 +237,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::GetMatlTrades(
+    void Reactor::GetMatlTrades(
                                      const std::vector<cyclus::Trade<Material> >& trades,
                                      std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
                                      responses) {
@@ -255,7 +255,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::AcceptMatlTrades(const std::vector<
+    void Reactor::AcceptMatlTrades(const std::vector<
                                         std::pair<cyclus::Trade<Material>, Material::Ptr> >& responses) {
         std::vector<std::pair<cyclus::Trade<cyclus::Material>,
         cyclus::Material::Ptr> >::const_iterator trade;
@@ -281,7 +281,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    std::set<cyclus::BidPortfolio<Material>::Ptr> cybamReactor::GetMatlBids(
+    std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
                                                                             cyclus::CommodMap<Material>::type& commod_requests) {
         using cyclus::BidPortfolio;
 
@@ -339,7 +339,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::Tock() {
+    void Reactor::Tock() {
         if (retired()) {
             return;
         }
@@ -368,10 +368,10 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::Transmute() { Transmute(n_assem_batch); }
+    void Reactor::Transmute() { Transmute(n_assem_batch); }
 
     //________________________________________________________________________
-    void cybamReactor::Transmute(int n_assem) {
+    void Reactor::Transmute(int n_assem) {
         MatVec old = core.PopN(std::min(n_assem, core.count()));
         core.Push(old);
         if (core.count() > old.size()) {
@@ -389,7 +389,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    std::map<std::string, MatVec> cybamReactor::PeekSpent() {
+    std::map<std::string, MatVec> Reactor::PeekSpent() {
         std::map<std::string, MatVec> mapped;
         MatVec mats = spent.PopN(spent.count());
         spent.Push(mats);
@@ -401,7 +401,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    bool cybamReactor::Discharge() {
+    bool Reactor::Discharge() {
         int npop = std::min(n_assem_batch, core.count());
         if (n_assem_spent - spent.count() < npop) {
             Record("DISCHARGE", "failed");
@@ -417,7 +417,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::Load() {
+    void Reactor::Load() {
         int n = std::min(n_assem_core - core.count(), fresh.count());
         if (n == 0) {
             return;
@@ -430,43 +430,43 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    std::string cybamReactor::fuel_incommod(Material::Ptr m) {
+    std::string Reactor::fuel_incommod(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_incommods.size()) {
-            throw KeyError("cybam::cybamReactor - no incommod for material object");
+            throw KeyError("cybam::Reactor - no incommod for material object");
         }
         return fuel_incommods[i];
     }
 
     //________________________________________________________________________
-    std::string cybamReactor::fuel_outcommod(Material::Ptr m) {
+    std::string Reactor::fuel_outcommod(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_outcommods.size()) {
-            throw KeyError("cybam::cybamReactor - no outcommod for material object");
+            throw KeyError("cybam::Reactor - no outcommod for material object");
         }
         return fuel_outcommods[i];
     }
 
     /*    //________________________________________________________________________
-     std::string cybamReactor::fuel_inrecipe(Material::Ptr m) {
+     std::string Reactor::fuel_inrecipe(Material::Ptr m) {
      int i = res_indexes[m->obj_id()];
      if (i >= fuel_inrecipes.size()) {
-     throw KeyError("cybam::cybamReactor - no inrecipe for material object");
+     throw KeyError("cybam::Reactor - no inrecipe for material object");
      }
      return fuel_inrecipes[i];
      }
      */
     //________________________________________________________________________
-    std::string cybamReactor::fuel_outrecipe(Material::Ptr m) {
+    std::string Reactor::fuel_outrecipe(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_outrecipes.size()) {
-            throw KeyError("cybam::cybamReactor - no outrecipe for material object");
+            throw KeyError("cybam::Reactor - no outrecipe for material object");
         }
         return fuel_outrecipes[i];
     }
 
     //________________________________________________________________________
-    double cybamReactor::fuel_pref(Material::Ptr m) {
+    double Reactor::fuel_pref(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_prefs.size()) {
             return 0;
@@ -475,7 +475,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::index_res(cyclus::Resource::Ptr m, std::string incommod) {
+    void Reactor::index_res(cyclus::Resource::Ptr m, std::string incommod) {
         for (int i = 0; i < fuel_incommods.size(); i++) {
             if (fuel_incommods[i] == incommod) {
                 res_indexes[m->obj_id()] = i;
@@ -483,11 +483,11 @@ namespace cybam {
             }
         }
         throw ValueError(
-                         "cybam::cybamReactor - received unsupported incommod material");
+                         "cybam::Reactor - received unsupported incommod material");
     }
 
     //________________________________________________________________________
-    std::map<std::string, MatVec> cybamReactor::PopSpent() {
+    std::map<std::string, MatVec> Reactor::PopSpent() {
         MatVec mats = spent.PopN(spent.count());
         std::map<std::string, MatVec> mapped;
         for (int i = 0; i < mats.size(); i++) {
@@ -504,7 +504,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::PushSpent(std::map<std::string, MatVec> leftover) {
+    void Reactor::PushSpent(std::map<std::string, MatVec> leftover) {
         std::map<std::string, MatVec>::iterator it;
         for (it = leftover.begin(); it != leftover.end(); ++it) {
             // undo reverse in PopSpent to make sure oldest assemblies come out first
@@ -514,7 +514,7 @@ namespace cybam {
     }
 
     //________________________________________________________________________
-    void cybamReactor::Record(std::string name, std::string val) {
+    void Reactor::Record(std::string name, std::string val) {
         context()
         ->NewDatum("ReactorEvents")
         ->AddVal("AgentId", id())
@@ -524,8 +524,8 @@ namespace cybam {
         ->Record();
     }
     
-    extern "C" cyclus::Agent* ConstructcybamReactor(cyclus::Context* ctx) {
-        return new cybamReactor(ctx);
+    extern "C" cyclus::Agent* ConstructReactor(cyclus::Context* ctx) {
+        return new Reactor(ctx);
     }
     
 }  // namespace cybam

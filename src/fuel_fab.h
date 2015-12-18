@@ -10,20 +10,20 @@
 
 namespace cybam {
 
-    /// cybamFuelFab takes in 2 streams of material and mixes them in ratios in order to
+    /// FuelFab takes in 2 streams of material and mixes them in ratios in order to
     /// supply material that matches some neutronics properties of reqeusted
     /// material.  
     /// @endcode
-    class cybamFuelFab : public cyclus::Facility {
+    class FuelFab : public cyclus::Facility {
 #pragma cyclus note { \
 "niche": "fabrication", \
 "doc": \
-"cybamFuelFab takes in 2 streams of material and mixes them in ratios in order to" \
+"FuelFab takes in 2 streams of material and mixes them in ratios in order to" \
 "", \
 }
     public:
-        cybamFuelFab(cyclus::Context* ctx);
-        virtual ~cybamFuelFab(){};
+        FuelFab(cyclus::Context* ctx);
+        virtual ~FuelFab(){};
 
 
 #pragma cyclus
