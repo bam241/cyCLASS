@@ -46,8 +46,6 @@ namespace cybam {
 
     class FillConverter : public cyclus::Converter<cyclus::Material> {
     public:
-    public:
-    public:
         FillConverter( Composition::Ptr c_fill, Composition::Ptr c_fiss) :
             c_fiss_(c_fiss), c_fill_(c_fill) {}
 

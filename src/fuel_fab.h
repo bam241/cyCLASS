@@ -12,7 +12,21 @@ namespace cybam {
 
     /// FuelFab takes in 2 streams of material and mixes them in ratios in order to
     /// supply material that matches some neutronics properties of reqeusted
-    /// material.  
+    /// material.  It uses an equivalence type method [1] inspired by a similar
+    /// approach in the CLASS fuel cycle simulator.
+
+    /// The major part of this Fuel_fuel comes from the CYCAMORE::FuelFab, where
+    /// mainly FuelFab::GetMatlBids and FuelFab::GetMatlTrades have been updated.
+    ///
+    /// The neural network used, allows to predict the enrichment of fissil material
+    /// requiert to be able to reach a cetain burups with the fuel. This Model is
+    /// capable to deal only plutnoium fissil stream (238Pu+239Pu+240Pu+2341Pu+242Pu+
+    /// 241Am -- the 241Am come from the decay of the 241Pu) and uranium based fill
+    /// stream (235U+238U)...
+
+    /// @code
+    /// [1]  B. Leniau, B. Mouginot, N. Thiolliere et. al. "A neural network approach
+    /// for burn-up calculation and its application to the dynamic fuel cycle code CLASS."
     /// @endcode
     class FuelFab : public cyclus::Facility {
 #pragma cyclus note { \
