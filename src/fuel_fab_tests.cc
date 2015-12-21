@@ -234,12 +234,7 @@ TEST(FuelFabTests, FillAllInventories) {
      "<fiss_recipe>spentuox</fiss_recipe>"
      "<fiss_size>3.5</fiss_size>"
      ""
-     "<topup_commod>uox</topup_commod>"
-     "<topup_recipe>uox</topup_recipe>"
-     "<topup_size>3.3</topup_size>"
-     ""
      "<outcommod>dummyout</outcommod>"
-     "<spectrum>thermal</spectrum>"
      "<throughput>1</throughput>"
      ;
 
@@ -266,10 +261,6 @@ TEST(FuelFabTests, FillAllInventories) {
   stmt->BindText(1, "spentuox");
   stmt->Step();
   EXPECT_DOUBLE_EQ(3.5, stmt->GetDouble(0));
-  stmt->Reset();
-  stmt->BindText(1, "uox");
-  stmt->Step();
-  EXPECT_DOUBLE_EQ(3.3, stmt->GetDouble(0));
 }
 
 // Meet a request requiring zero fill inventory when we have zero fill
@@ -285,7 +276,6 @@ TEST(FuelFabTests, ProvideStraightFiss_WithZeroFill) {
      "<fiss_size>100</fiss_size>"
      ""
      "<outcommod>recyclefuel</outcommod>"
-     "<spectrum>thermal</spectrum>"
      "<throughput>100</throughput>"
      ;
   int simdur = 6;
@@ -379,109 +369,6 @@ TEST(FuelFabTests, ThroughputLimit) {
 
   stmt->Step();
   EXPECT_DOUBLE_EQ(simdur-1, stmt->GetDouble(0));
-}
-
-
-
-// swap to topup inventory because fissile has too low reactivity.
-TEST(FuelFabTests, SwapTopup) {
-  std::string config = 
-     "<fill_commods> <val>natu</val> </fill_commods>"
-     "<fill_recipe>natu</fill_recipe>"
-     "<fill_size>10000</fill_size>"
-     ""
-     "<fiss_commods> <val>pustreambad</val> </fiss_commods>"
-     "<fiss_recipe>pustreambad</fiss_recipe>"
-     "<fiss_size>10000</fiss_size>"
-     ""
-     "<topup_commod>pustream</topup_commod>"
-     "<topup_recipe>pustream</topup_recipe>"
-     "<topup_size>10000</topup_size>"
-     ""
-     "<outcommod>recyclefuel</outcommod>"
-     "<spectrum>thermal</spectrum>"
-     "<throughput>10000</throughput>"
-     ;
-  int simdur = 3;
-  double sink_cap = 10;
-
-  cyclus::MockSim sim(cyclus::AgentSpec(":cybam:FuelFab"), config, simdur);
-  sim.AddSource("pustream").Finalize();
-  sim.AddSource("pustreambad").Finalize();
-  sim.AddSource("natu").Finalize();
-  sim.AddSink("recyclefuel").recipe("uox").capacity(sink_cap).lifetime(2).Finalize();
-  sim.AddRecipe("uox", c_uox());
-  sim.AddRecipe("pustream", c_pustream());
-  sim.AddRecipe("pustreambad", c_pustreambad());
-  sim.AddRecipe("natu", c_natu());
-  int id = sim.Run();
-
-  std::vector<Cond> conds;
-  conds.push_back(Cond("Commodity", "==", std::string("recyclefuel")));
-  QueryResult qr = sim.db().Query("Transactions", &conds);
-  ASSERT_EQ(1, qr.rows.size()) << "failed to meet fuel request";
-  Material::Ptr m = sim.GetMaterial(qr.GetVal<int>("ResourceId"));
-  EXPECT_NEAR(sink_cap, m->quantity(), 1e-10) << "supplied fuel was constrained too much";
-
-  conds[0] = Cond("Commodity", "==", std::string("natu"));
-  conds.push_back(Cond("Time", "==", 2));
-  qr = sim.db().Query("Transactions", &conds);
-  ASSERT_EQ(0, qr.rows.size()) << "failed to swith to topup - used fill - uh oh";
-
-  conds[0] = Cond("Commodity", "==", std::string("pustream"));
-  conds.push_back(Cond("Time", "==", 2));
-  qr = sim.db().Query("Transactions", &conds);
-  ASSERT_EQ(1, qr.rows.size()) << "didn't get more topup after supposedly using it - why?";
-}
-
-TEST(FuelFabTests, SwapTopup_ZeroFill) {
-  std::string config = 
-     "<fill_commods> <val>natu</val> </fill_commods>"
-     "<fill_recipe>natu</fill_recipe>"
-     "<fill_size>0</fill_size>"
-     ""
-     "<fiss_commods> <val>pustreambad</val> </fiss_commods>"
-     "<fiss_recipe>pustreambad</fiss_recipe>"
-     "<fiss_size>10000</fiss_size>"
-     ""
-     "<topup_commod>pustream</topup_commod>"
-     "<topup_recipe>pustream</topup_recipe>"
-     "<topup_size>10000</topup_size>"
-     ""
-     "<outcommod>recyclefuel</outcommod>"
-     "<spectrum>thermal</spectrum>"
-     "<throughput>10000</throughput>"
-     ;
-  int simdur = 3;
-  double sink_cap = 10;
-
-  cyclus::MockSim sim(cyclus::AgentSpec(":cybam:FuelFab"), config, simdur);
-  sim.AddSource("pustream").Finalize();
-  sim.AddSource("pustreambad").Finalize();
-  sim.AddSource("natu").Finalize();
-  sim.AddSink("recyclefuel").recipe("uox").capacity(sink_cap).lifetime(2).Finalize();
-  sim.AddRecipe("uox", c_uox());
-  sim.AddRecipe("pustream", c_pustream());
-  sim.AddRecipe("pustreambad", c_pustreambad());
-  sim.AddRecipe("natu", c_natu());
-  int id = sim.Run();
-
-  std::vector<Cond> conds;
-  conds.push_back(Cond("Commodity", "==", std::string("recyclefuel")));
-  QueryResult qr = sim.db().Query("Transactions", &conds);
-  ASSERT_EQ(1, qr.rows.size()) << "failed to meet fuel request";
-  Material::Ptr m = sim.GetMaterial(qr.GetVal<int>("ResourceId"));
-  EXPECT_NEAR(sink_cap, m->quantity(), 1e-10) << "supplied fuel was constrained too much";
-
-  conds[0] = Cond("Commodity", "==", std::string("pustream"));
-  conds.push_back(Cond("Time", "==", 2));
-  qr = sim.db().Query("Transactions", &conds);
-  ASSERT_EQ(1, qr.rows.size()) << "failed to use topup - why?";
-
-  conds[0] = Cond("Commodity", "==", std::string("pustreambad"));
-  conds.push_back(Cond("Time", "==", 2));
-  qr = sim.db().Query("Transactions", &conds);
-  ASSERT_EQ(1, qr.rows.size()) << "failed to use fiss - why?";
 }
 
 
