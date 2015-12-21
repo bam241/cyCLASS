@@ -265,7 +265,7 @@ TEST(FuelFabTests, FillAllInventories) {
 
 // Meet a request requiring zero fill inventory when we have zero fill
 // inventory quantity.
-TEST(FuelFabTests, ProvideStraightFiss_WithZeroFill) {
+/*TEST(FuelFabTests, ProvideStraightFiss_WithZeroFill) {
   std::string config = 
      "<fill_commods> <val>nothing</val> </fill_commods>"
      "<fill_recipe>natu</fill_recipe>"
@@ -293,8 +293,8 @@ TEST(FuelFabTests, ProvideStraightFiss_WithZeroFill) {
   // 6 = 3 receives of inventory, 3 sells of recycled fuel
   EXPECT_EQ(6, qr.rows.size());
 }
-
-TEST(FuelFabTests, ProvideStraightFill_ZeroFiss) {
+*/
+/*TEST(FuelFabTests, ProvideStraightFill_ZeroFiss) {
   std::string config = 
      "<fill_commods> <val>anything</val> </fill_commods>"
      "<fill_recipe>natu</fill_recipe>"
@@ -322,7 +322,7 @@ TEST(FuelFabTests, ProvideStraightFill_ZeroFiss) {
   QueryResult qr = sim.db().Query("Transactions", NULL);
   // 6 = 3 receives of inventory, 3 sells of recycled fuel
   EXPECT_EQ(6, qr.rows.size());
-}
+}*/
 
 // throughput is properly restricted when faced with many fuel
 // requests and with ample material inventory.
@@ -380,7 +380,7 @@ TEST(FuelFabTests, ThroughputLimit) {
 // the fab being matched for more than it could actually supply - due to
 // thinking it had an inventory of higher quality material than was actually
 // the case.  This test makes sure that doesn't happen again.
-TEST(FuelFabTests, HomogenousBuffers) {
+/*TEST(FuelFabTests, HomogenousBuffers) {
   std::string config = 
      "<fill_commods> <val>natu</val> </fill_commods>"
      "<fill_recipe>natu</fill_recipe>"
@@ -415,7 +415,7 @@ TEST(FuelFabTests, HomogenousBuffers) {
   sim.AddRecipe("natu", c_natu());
   sim.AddRecipe("special", c);
   ASSERT_NO_THROW(sim.Run());
-}
+}*/
 
 } // namespace fuelfabtests
 } // namespace cybam

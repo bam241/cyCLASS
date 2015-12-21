@@ -57,7 +57,7 @@ Composition::Ptr c_water() {
 // delay.
 TEST(ReactorTests, JustInTimeOrdering) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>lwr_fresh</val>  </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>lwr_spent</val>  </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>enriched_u</val> </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>      </fuel_outcommods>  "
@@ -84,7 +84,7 @@ TEST(ReactorTests, JustInTimeOrdering) {
 // cycle.
 TEST(ReactorTests, BatchSizes) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    </fuel_outcommods>  "
@@ -111,7 +111,7 @@ TEST(ReactorTests, BatchSizes) {
 // cycle is honored.
 TEST(ReactorTests, RefuelTimes) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    </fuel_outcommods>  "
@@ -141,7 +141,7 @@ TEST(ReactorTests, RefuelTimes) {
 // different than RefuelTimes test and is not a duplicate of it.
 TEST(ReactorTests, OrderAtRefuelStart) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    </fuel_outcommods>  "
@@ -170,7 +170,7 @@ TEST(ReactorTests, OrderAtRefuelStart) {
 // - with proper inventory constraint honoring, etc.
 TEST(ReactorTests, MultiFuelMix) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      <val>mox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> <val>spentmox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      <val>mox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    <val>waste</val>    </fuel_outcommods>  "
@@ -206,7 +206,7 @@ TEST(ReactorTests, MultiFuelMix) {
 // spent fuel inventory buffer.
 TEST(ReactorTests, FullSpentInventory) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    </fuel_outcommods>  "
@@ -239,7 +239,7 @@ TEST(ReactorTests, FullSpentInventory) {
 // start time.
 TEST(ReactorTests, FuelShortage) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    </fuel_outcommods>  "
@@ -288,7 +288,7 @@ TEST(ReactorTests, FuelShortage) {
 // tests that discharged fuel is transmuted properly immediately at cycle end.
 TEST(ReactorTests, DischargedFuelTransmute) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>    </fuel_outcommods>  "
@@ -322,7 +322,7 @@ TEST(ReactorTests, DischargedFuelTransmute) {
 // simultaneously.
 TEST(ReactorTests, SpentFuelProperCommodTracking) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>uox</val>      <val>mox</val>      </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>spentuox</val> <val>spentmox</val> </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>uox</val>      <val>mox</val>      </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste1</val>   <val>waste2</val>   </fuel_outcommods>  "
@@ -363,7 +363,7 @@ TEST(ReactorTests, SpentFuelProperCommodTracking) {
 TEST(ReactorTests, PrefChange) {
   // it is important that the fuel_prefs not be present in the config below.
   std::string config = 
-     "  <fuel_inrecipes>  <val>lwr_fresh</val>  </fuel_inrecipes>  "
+    "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>lwr_spent</val>  </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>enriched_u</val> </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>      </fuel_outcommods>  "
@@ -463,7 +463,7 @@ TEST(ReactorTests, PrefChange) {
 
 TEST(ReactorTests, Retire) {
   std::string config = 
-     "  <fuel_inrecipes>  <val>lwr_fresh</val>  </fuel_inrecipes>  "
+     "  <burnup>45</burnup>  "
      "  <fuel_outrecipes> <val>lwr_spent</val>  </fuel_outrecipes>  "
      "  <fuel_incommods>  <val>enriched_u</val> </fuel_incommods>  "
      "  <fuel_outcommods> <val>waste</val>      </fuel_outcommods>  "
