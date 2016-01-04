@@ -1,8 +1,7 @@
 ### DO NOT DELETE THIS COMMENT: INSERT_ARCHETYPES_HERE ###
 
 
-USE_CYCLUS("cybam" "bu_solver_mlp")
-USE_CYCLUS("cybam" "fuel_fab")
+\USE_CYCLUS("cybam" "fuel_fab")
 USE_CYCLUS("cybam" "reactor")
 
 INSTALL_CYCLUS_MODULE("cybam" "./")
