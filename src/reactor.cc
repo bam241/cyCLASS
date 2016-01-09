@@ -1,5 +1,4 @@
 #include "reactor.h"
-#include "bu_solver_mlp.h"
 
 using cyclus::Material;
 using cyclus::Composition;
@@ -15,7 +14,7 @@ typedef std::map<Nuc, double> CompMap;
 //#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
 #define DBGL		;
 
-namespace cybam {
+namespace cyclass {
 
     Reactor::Reactor(cyclus::Context* ctx)
     : cyclus::Facility(ctx),
@@ -34,33 +33,33 @@ namespace cybam {
         cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
                                                    "the Reactor archetype "
                                                    "is experimental");
-        MyBUSolver = new MLPBUsolver();
+        MyCLASSAdaptator = new CLASSAdaptator();
 
     }
 
-#pragma cyclus def clone cybam::Reactor
+#pragma cyclus def clone cyclass::Reactor
 
-#pragma cyclus def schema cybam::Reactor
+#pragma cyclus def schema cyclass::Reactor
 
-#pragma cyclus def annotations cybam::Reactor
+#pragma cyclus def annotations cyclass::Reactor
 
-#pragma cyclus def infiletodb cybam::Reactor
+#pragma cyclus def infiletodb cyclass::Reactor
 
-#pragma cyclus def snapshot cybam::Reactor
+#pragma cyclus def snapshot cyclass::Reactor
 
-#pragma cyclus def snapshotinv cybam::Reactor
+#pragma cyclus def snapshotinv cyclass::Reactor
 
-#pragma cyclus def initinv cybam::Reactor
+#pragma cyclus def initinv cyclass::Reactor
 
     //________________________________________________________________________
     void Reactor::InitFrom(Reactor* m) {
-#pragma cyclus impl initfromcopy cybam::Reactor
+#pragma cyclus impl initfromcopy cyclass::Reactor
         cyclus::toolkit::CommodityProducer::Copy(m);
     }
 
     //________________________________________________________________________
     void Reactor::InitFrom(cyclus::QueryableBackend* b) {
-#pragma cyclus impl initfromdb cybam::Reactor
+#pragma cyclus impl initfromdb cyclass::Reactor
 
         namespace tk = cyclus::toolkit;
         tk::CommodityProducer::Add(tk::Commodity(power_name),
@@ -214,12 +213,12 @@ namespace cybam {
                 CompMap fertil_comp;
                 fertil_comp.insert(std::pair<Nuc, double>(922350000,0.25));
                 fertil_comp.insert(std::pair<Nuc, double>(922380000,99.75));
-                fertil_comp =  cybam::NormalizeComp(fertil_comp);
+                fertil_comp =  cyclass::NormalizeComp(fertil_comp);
 
                 Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
                 Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
-                double Enrch = MyBUSolver->GetEnrichment(fissil_stream, fertil_stream, burnup );
+                double Enrch = MyCLASSAdtator->GetEnrichment(fissil_stream, fertil_stream, burnup );
 
                 Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
@@ -282,7 +281,7 @@ namespace cybam {
 
     //________________________________________________________________________
     std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
-                                                                            cyclus::CommodMap<Material>::type& commod_requests) {
+                                                                       cyclus::CommodMap<Material>::type& commod_requests) {
         using cyclus::BidPortfolio;
 
         std::set<BidPortfolio<Material>::Ptr> ports;
@@ -384,7 +383,9 @@ namespace cybam {
         Record("TRANSMUTE", ss.str());
 
         for (int i = 0; i < old.size(); i++) {
-            old[i]->Transmute(context()->GetRecipe(fuel_outrecipe(old[i])));
+            double mass = old[i].quantity();
+            cyclus::Composition::ptr compo = old[i].comp()
+            old[i]->Transmute( MyCLASSAdaptator->GetCompAfterIrradiation( compo, power,mass , burnup)  );
         }
     }
 
@@ -433,7 +434,7 @@ namespace cybam {
     std::string Reactor::fuel_incommod(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_incommods.size()) {
-            throw KeyError("cybam::Reactor - no incommod for material object");
+            throw KeyError("cyclass::Reactor - no incommod for material object");
         }
         return fuel_incommods[i];
     }
@@ -442,27 +443,9 @@ namespace cybam {
     std::string Reactor::fuel_outcommod(Material::Ptr m) {
         int i = res_indexes[m->obj_id()];
         if (i >= fuel_outcommods.size()) {
-            throw KeyError("cybam::Reactor - no outcommod for material object");
+            throw KeyError("cyclass::Reactor - no outcommod for material object");
         }
         return fuel_outcommods[i];
-    }
-
-    /*    //________________________________________________________________________
-     std::string Reactor::fuel_inrecipe(Material::Ptr m) {
-     int i = res_indexes[m->obj_id()];
-     if (i >= fuel_inrecipes.size()) {
-     throw KeyError("cybam::Reactor - no inrecipe for material object");
-     }
-     return fuel_inrecipes[i];
-     }
-     */
-    //________________________________________________________________________
-    std::string Reactor::fuel_outrecipe(Material::Ptr m) {
-        int i = res_indexes[m->obj_id()];
-        if (i >= fuel_outrecipes.size()) {
-            throw KeyError("cybam::Reactor - no outrecipe for material object");
-        }
-        return fuel_outrecipes[i];
     }
 
     //________________________________________________________________________
@@ -483,7 +466,7 @@ namespace cybam {
             }
         }
         throw ValueError(
-                         "cybam::Reactor - received unsupported incommod material");
+                         "cyclass::Reactor - received unsupported incommod material");
     }
 
     //________________________________________________________________________
@@ -528,4 +511,4 @@ namespace cybam {
         return new Reactor(ctx);
     }
     
-}  // namespace cybam
+}  // namespace cyclass

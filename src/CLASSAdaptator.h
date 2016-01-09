@@ -1,5 +1,5 @@
-#ifndef CYBAM_SRC_MLP_BU_H_
-#define CYBAM_SRC_MLP_BU_H_
+#ifndef CYCLASS_SRC_MLP_BU_H_
+#define CYCLASS_SRC_MLP_BU_H_
 
 #include "cyclus.h"
 #include "TMVA/Reader.h"
@@ -35,10 +35,13 @@ namespace cyclass {
         // Lauch the MLP (using TMVA) to predict the requeirt fissil enrichment (according to the compisition of fissil and fertil stream and the targeted burnup)
         float GetEnrichment(cyclus::Composition::Ptr c_fissil,
                             cyclus::Composition::Ptr c_fertil,
-                            double BurnUp);
+                            double BurnUp) const;
 
         // liner dicchotomy to determine the Burn-up reachable by a fuel depending of its composition...
-        float GetBU(cyclus::Composition::Ptr fuel, double eps = 1e-6 );
+        float GetBU(cyclus::Composition::Ptr fuel, double eps = 1e-6 ) const;
+
+        cyclus::Composition::Ptr GetCompAfterIrradiation(CompMap InitialCompo, double poweer,  double mass, double burnup);
+
 
         std::string str() { return TMVAWeightFile;};
 
@@ -77,10 +80,10 @@ namespace cyclass {
     CompMap operator-(CompMap const& IVa, CompMap const& IVb);
     CompMap operator/(CompMap const& IVA, double F);
 
-    IsotopicVector  CYCLUS2CLASS(CompMap c_compo);
-    CompMap         CLASS2CYCLUS(IsotopicVector IV);
+    IsotopicVector  CYCLUS2CLASS(CompMap const& c_compo);
+    CompMap         CLASS2CYCLUS(IsotopicVector const& IV);
 
     
-} // namespace cybam
+} // namespace cyclass
 
-#endif  // cybam_SRC_FUEL_FAB_H_
+#endif  // cyclass_SRC_FUEL_FAB_H_

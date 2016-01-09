@@ -1,10 +1,10 @@
-#ifndef CYBAM_SRC_REACTOR_H_
-#define CYBAM_SRC_REACTOR_H_
+#ifndef CYCLASS_SRC_REACTOR_H_
+#define CYCLASS_SRC_REACTOR_H_
 
 #include "cyclus.h"
-#include "bu_solver_mlp.h"
+#include "CLASSAdaptator.h"
 
-namespace cybam {
+namespace cyclass {
 
     /// Reactor is a simple, general reactor based on static compositional
     /// transformations to model fuel burnup.  The user specifies a set of input
@@ -134,11 +134,9 @@ namespace cybam {
     private:
         std::string fuel_incommod(cyclus::Material::Ptr m);
         std::string fuel_outcommod(cyclus::Material::Ptr m);
-        std::string fuel_inrecipe(cyclus::Material::Ptr m);
-        std::string fuel_outrecipe(cyclus::Material::Ptr m);
         double fuel_pref(cyclus::Material::Ptr m);
 
-        MLPBUsolver* MyBUSolver;
+        CLASSAdaptator* MyCLASSAdaptator;
 
         bool retired() {
             return exit_time() != -1 && context()->time() >= exit_time();
@@ -185,14 +183,6 @@ namespace cybam {
 }
         std::vector<std::string> fuel_incommods;
 
-        /*  #pragma cyclus var { \
-         "uitype": ["oneormore", "recipe"], \
-         "uilabel": "Fresh Fuel Recipe List", \
-         "doc": "Fresh fuel recipes to request for each of the given fuel input " \
-         "commodities (same order).", \
-         }
-         std::vector<std::string> fuel_inrecipes;
-         */
 #pragma cyclus var { \
 "default": [], \
 "uilabel": "Fresh Fuel Preference List", \
@@ -211,53 +201,6 @@ namespace cybam {
 }
         std::vector<std::string> fuel_outcommods;
 
-#pragma cyclus var {		       \
-"uitype": ["oneormore", "recipe"], \
-"uilabel": "Spent Fuel Recipe List", \
-"doc": "Spent fuel recipes corresponding to the given fuel input " \
-"commodities (same order)." \
-" Fuel received via a particular input commodity is transmuted to " \
-"the recipe specified here after being burned during a cycle.", \
-}
-        std::vector<std::string> fuel_outrecipes;
-        /*
-         ///////////// recipe changes ///////////
-         #pragma cyclus var { \
-         "default": [], \
-         "uilabel": "Time to Change Fresh/Spent Fuel Recipe", \
-         "doc": "A time step on which to change the input-output recipe pair for " \
-         "a requested fresh fuel.", \
-         }
-         std::vector<int> recipe_change_times;
-         #pragma cyclus var { \
-         "default": [], \
-         "uilabel": "Commodity for Changed Fresh/Spent Fuel Recipe", \
-         "doc": "The input commodity indicating fresh fuel for which recipes will " \
-         "be changed. Same order as and direct correspondence to the " \
-         "specified recipe change times.", \
-         "uitype": ["oneormore", "incommodity"], \
-         }
-         std::vector<std::string> recipe_change_commods;
-         #pragma cyclus var { \
-         "default": [], \
-         "uilabel": "New Recipe for Fresh Fuel", \
-         "doc": "The new input recipe to use for this recipe change." \
-         " Same order as and direct correspondence to the specified recipe " \
-         "change times.", \
-         "uitype": ["oneormore", "recipe"], \
-         }
-         std::vector<std::string> recipe_change_in;
-         #pragma cyclus var { \
-         "default": [], \
-         "uilabel": "New Recipe for Spent Fuel", \
-         "doc": "The new output recipe to use for this recipe change." \
-         " Same order as and direct correspondence to the specified recipe " \
-         "change times.", \
-         "uitype": ["oneormore", "recipe"], \
-         }
-         std::vector<std::string> recipe_change_out;
-         */
-        //////////// inventory and core params ////////////
 #pragma cyclus var { \
 "doc": "Mass (kg) of a single assembly.",	\
 "uilabel": "Assembly Mass", \
@@ -335,6 +278,14 @@ namespace cybam {
 
         //////////// power params ////////////
 #pragma cyclus var { \
+"doc": "Amount of thermal power the facility produces when operating " \
+"normally.", \
+"uilabel": "Thermal Reactor Power", \
+"units": "MWe", \
+}
+        double power;
+
+#pragma cyclus var { \
 "default": 0, \
 "doc": "Amount of electrical power the facility produces when operating " \
 "normally.", \
@@ -407,6 +358,6 @@ namespace cybam {
         std::set<std::string> uniq_outcommods_;
     };
     
-} // namespace cybam
+} // namespace cyclass
 
-#endif  // CYBAM_SRC_REACTOR_H_
+#endif  // CYCLASS_SRC_REACTOR_H_

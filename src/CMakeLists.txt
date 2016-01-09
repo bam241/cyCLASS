@@ -1,11 +1,11 @@
 ### DO NOT DELETE THIS COMMENT: INSERT_ARCHETYPES_HERE ###
 
 
-USE_CYCLUS("cybam" "fuel_fab")
-USE_CYCLUS("cybam" "reactor")
+USE_CYCLUS("cyclass" "fuel_fab")
+USE_CYCLUS("cyclass" "reactor")
 
-INSTALL_CYCLUS_MODULE("cybam" "./")
+INSTALL_CYCLUS_MODULE("cyclass" "./")
 
 # install header files
 FILE(GLOB h_files "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-INSTALL(FILES ${h_files} DESTINATION include/cybam COMPONENT cybam)
+INSTALL(FILES ${h_files} DESTINATION include/cyclass COMPONENT cyclass)

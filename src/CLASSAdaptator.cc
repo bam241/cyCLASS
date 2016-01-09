@@ -1,5 +1,6 @@
 #include "CLASSAdaptator.h"
 
+#include "EvolutionData.hxx"
 
 using cyclus::Nuc;
 using cyclus::Material;
@@ -34,7 +35,7 @@ namespace cyclass {
             myPhysicsModel->SetIrradiationModel(new IrradiationModel());
         }
         else if(BatemanSolver == "ii" ){
-            myPhysicsModel->SetIrradiationModel(new IrradiationModel();
+            myPhysicsModel->SetIrradiationModel(new IrradiationModel());
         }
 
         cyDBGL
@@ -44,7 +45,7 @@ namespace cyclass {
     //________________________________________________________________________
     float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
                                         cyclus::Composition::Ptr c_fertil,
-                                        double BurnUp){
+                                        double BurnUp) const{
         cyDBGL
 
         double val = 0;
@@ -61,7 +62,7 @@ namespace cyclass {
 
 
     //________________________________________________________________________
-    float MLPBUsolver::GetBU(cyclus::Composition::Ptr fuel, double eps)    {
+    float CLASSAdaptator::GetBU(cyclus::Composition::Ptr fuel, double eps) const{
         cyDBGL
 
         float BU_max = 80;
@@ -106,6 +107,21 @@ namespace cyclass {
 
         cyDBGL
         return BU_estimation;
+
+
+    }
+
+    cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(CompMap InitialCompo, double power, double mass, double burnup){
+
+        IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
+
+        cSecond finaltime = burnup /(power*1e-3) /mass *3600*24;
+
+        EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power);
+
+        IsotopicVector AfterIrradiationIV = myEvolution.GetIsotopicVectorAt(finaltime);
+
+        return Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
 
     }
 
@@ -203,12 +219,12 @@ namespace cyclass {
     //________________________________________________________________________
     void Print(CompMap compo){
         CompMap::iterator it;
-        
+
         for (it = compo.begin(); it != compo.end(); it++){
             std::cout << it->first << " " << it->second << std::endl;
         }
     }
-    
+
     //________________________________________________________________________
     CompMap operator-(CompMap const& IVa, CompMap const& IVb) { return IVa + (-1*IVb); };
 
@@ -219,7 +235,7 @@ namespace cyclass {
     CompMap operator*(double F, CompMap const& IVA) { return IVA*F; };
 
     //________________________________________________________________________
-    IsotopicVector CYCLUS2CLASS(CompMap c_compo){
+    IsotopicVector CYCLUS2CLASS(CompMap const& c_compo){
 
         IsotopicVector IV;
         CompMap::iterator it;
@@ -236,7 +252,7 @@ namespace cyclass {
     }
 
     //________________________________________________________________________
-    CompMap CLASS2CYCLUS(IsotopicVector IV){
+    CompMap CLASS2CYCLUS(IsotopicVector const& IV){
 
         CompoMap myCompoMap;
 
@@ -258,11 +274,11 @@ namespace cyclass {
 
     }
 
-    
+
     //________________________________________________________________________
-    
-    
-    
-    
-    
+
+
+
+
+
 } // namespace cyclass
