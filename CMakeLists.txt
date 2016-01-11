@@ -1,4 +1,3 @@
-# DO NOT DELETE THIS LINE:: ./:cybam:BU_solver_MLP
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 # taken from http://geant4.cern.ch/support/source/geant4/CMakeLists.txt
@@ -12,7 +11,7 @@ IF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "in-source build detected")
 ENDIF()
 
-PROJECT(cybam)
+PROJECT(cyclass)
 
 # quiets fortify_source warnings when not compiling with optimizations
 # in linux distros where compilers were compiled with fortify_source enabled by
@@ -103,12 +102,17 @@ MESSAGE("--    HDF5 Libraries: ${HDF5_LIBRARIES}")
 FIND_PACKAGE(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net tmva)
 include_directories(${CMAKE_SOURCE_DIR} ${ROOT_INCLUDE_DIRS})
 ADD_DEFINITIONS(${ROOT_CXX_FLAGS})
-SET(CYBAM_INCLUDE_DIRS $ROOT_INCLUDE_DIRS )
+SET(CYCLASS_INCLUDE_DIRS $ROOT_INCLUDE_DIRS )
 set(LIBS ${LIBS} ${ROOT_LIBRARIES})
 MESSAGE("--    ROOT Root: ${ROOTSYS}")
 MESSAGE("--    ROOT Include directory: ${ROOT_INCLUDE_DIR}")
 MESSAGE("--    ROOT Library directories: ${ROOT_LIBRARY_DIRS}")
 MESSAGE("--    ROOT Libraries: ${ROOT_LIBRARIES}")
+
+# Find CLASS
+set(LIBS ${LIBS} "/Users/mouginot/scratch/App/CLASS/lib/")
+include_directories(${CMAKE_SOURCE_DIR} "/Users/mouginot/scratch/App/CLASS/source/include")
+
 
 
 

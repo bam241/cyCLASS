@@ -6,6 +6,7 @@
 #include "PhysicsModels.hxx"
 #include "IsotopicVector.hxx"
 #include <string>
+#include <sstream>
 
 class TTree;
 
@@ -25,12 +26,14 @@ typedef std::map<Nuc, double> CompMap;
 
 namespace cyclass {
 
+
     class CLASSAdaptator {
     public:
 
 
-        CLASSAdaptator(std::string EqModel, std::string XSModel, std::string BatemanSolver);
-
+        CLASSAdaptator(std::string EqModel, std::stringstream& EQcommand,
+                       std::string XSModel, std::stringstream& XScommand,
+                       std::string IMModel, std::stringstream& IMcommand);
 
         // Lauch the MLP (using TMVA) to predict the requeirt fissil enrichment (according to the compisition of fissil and fertil stream and the targeted burnup)
         float GetEnrichment(cyclus::Composition::Ptr c_fissil,
@@ -40,7 +43,7 @@ namespace cyclass {
         // liner dicchotomy to determine the Burn-up reachable by a fuel depending of its composition...
         float GetBU(cyclus::Composition::Ptr fuel, double eps = 1e-6 ) const;
 
-        cyclus::Composition::Ptr GetCompAfterIrradiation(CompMap InitialCompo, double poweer,  double mass, double burnup);
+        cyclus::Composition::Ptr GetCompAfterIrradiation(cyclus::Composition::Ptr InitialCompo, double poweer, double mass, double burnup);
 
 
         std::string str() { return TMVAWeightFile;};
@@ -80,10 +83,18 @@ namespace cyclass {
     CompMap operator-(CompMap const& IVa, CompMap const& IVb);
     CompMap operator/(CompMap const& IVA, double F);
 
-    IsotopicVector  CYCLUS2CLASS(CompMap const& c_compo);
+    IsotopicVector  CYCLUS2CLASS(CompMap c_compo);
+    IsotopicVector  CYCLUS2CLASS(cyclus::Composition::Ptr c_compo);
     CompMap         CLASS2CYCLUS(IsotopicVector const& IV);
 
-    
+
+    EquivalenceModel* EQmodelfor(std::string name, std::stringstream& command);
+    XSModel* XSmodelfor(std::string name, std::stringstream& command);
+    IrradiationModel* IMmodelfor(std::string name, std::stringstream& command);
+
+
+
+
 } // namespace cyclass
 
 #endif  // cyclass_SRC_FUEL_FAB_H_

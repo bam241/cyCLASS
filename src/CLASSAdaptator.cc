@@ -2,41 +2,183 @@
 
 #include "EvolutionData.hxx"
 
+#include "Irradiation/IM_Matrix.hxx"
+#include "Irradiation/IM_RK4.hxx"
+
+#include "XS/XSM_MLP.hxx"
+
+
+#include "Equivalence/EQM_FBR_BakerRoss_MOX.hxx"  
+#include "Equivalence/EQM_FBR_MLP_Keff_BOUND.hxx"
+#include "Equivalence/EQM_PWR_LIN_MOX.hxx"
+#include "Equivalence/EQM_PWR_MLP_MOX_Am.hxx"
+#include "Equivalence/EQM_PWR_QUAD_MOX.hxx"
+#include "Equivalence/EQM_FBR_MLP_Keff.hxx"
+#include "Equivalence/EQM_MLP_Kinf.hxx"
+#include "Equivalence/EQM_PWR_MLP_MOX.hxx"
+#include "Equivalence/EQM_PWR_POL_UO2.hxx"
+
+#include <string>
+
 using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
 
+
 //#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
 #define cyDBGL ;
+
 
 namespace cyclass {
 
 
-    CLASSAdaptator::CLASSAdaptator(std::string EqModel, std::string XSModel, std::string BatemanSolver){
+
+    EquivalenceModel* EQmodelfor(std::string name, std::stringstream& command ) {
+
+        if( name == "FBR_BakerRoss_MOX" ){
+
+            std::string buff;
+            getline( command, buff, ',' );
+            double w_235u = atof(buff.c_str());
+            getline( command, buff, ',' );
+            double w_238pu = atof(buff.c_str());
+            getline( command, buff, ',' );
+            double w_240pu = atof(buff.c_str());
+            getline( command, buff, ',' );
+            double w_241pu = atof(buff.c_str());
+            getline( command, buff, ',' );
+            double w_242pu = atof(buff.c_str());
+            getline( command, buff, ',' );
+            double w_241am = atof(buff.c_str());
+            getline( command, buff, ',' );
+            double w_eqfissil = atof(buff.c_str());
+
+
+            return new EQM_FBR_BakerRoss_MOX(w_235u, w_238pu, w_240pu, w_241pu, w_242pu, w_241am, w_eqfissil );
+
+        }else if( name == "FBR_MLP_Keff" ){
+
+            std::string TMVAWeightPath;
+            getline( command, TMVAWeightPath, ',' );
+
+            std::string buff;
+            getline( command, buff, ',' );
+            double keff_target = atof(buff.c_str());
+
+            std::string InformationFile;
+            getline( command, InformationFile, ',' );
+
+            return new EQM_FBR_MLP_Keff(TMVAWeightPath, keff_target, InformationFile);
+
+
+        }else if( name == "FBR_MLP_Keff_BOUND" ){
+
+            std::string TMVAWeightPath;
+            getline( command, TMVAWeightPath, ',' );
+
+            std::string buff;
+            getline( command, buff, ',' );
+            int NumOfBatch = atoi(buff.c_str());
+
+            getline( command, buff, ',' );
+            double LowerKeffective = atof(buff.c_str());
+
+            getline( command, buff, ',' );
+            double UpperKeffective = atof(buff.c_str());
+
+            std::string InformationFile;
+            getline( command, InformationFile, ',' );
+
+
+
+            return new EQM_FBR_MLP_Keff_BOUND(TMVAWeightPath,
+                                              NumOfBatch,
+                                              LowerKeffective,
+                                              UpperKeffective,
+                                              InformationFile);
+
+
+        }else if( name == "MLP_Kinf" ){
+
+
+            std::string WeightPathAlpha0;
+            getline( command, WeightPathAlpha0, ',' );
+
+            std::string WeightPathAlpha1;
+            getline( command, WeightPathAlpha1, ',' );
+
+            std::string WeightPathAlpha2;
+            getline( command, WeightPathAlpha2, ',' );
+
+            std::string InformationFile;
+            getline( command, InformationFile, ',' );
+
+            std::string buff;
+            getline( command, buff, ',' );
+            int NumOfBatch = atoi(buff.c_str());
+
+            getline( command, buff, ',' );
+            double CriticalityThreshold = atof(buff.c_str());
+
+
+            return new EQM_MLP_Kinf(WeightPathAlpha0,
+                                    WeightPathAlpha1,
+                                    WeightPathAlpha2,
+                                    InformationFile,
+                                    NumOfBatch,
+                                    CriticalityThreshold);
+
+        }else if( name == "PWR_LIN_MOX" ){
+
+            return new EQM_PWR_LIN_MOX(command.str());
+
+        }else if( name == "PWR_MLP_MOX_Am" ){
+
+            return new EQM_PWR_MLP_MOX_AM(command.str());
+        }else if( name == "PWR_QUAD_MOX" ){
+
+            return new EQM_PWR_QUAD_MOX(command.str());
+        }else if( name == "PWR_MLP_MOX" ){
+
+            return new EQM_PWR_MLP_MOX(command.str());
+        }else if( name == "PWR_POL_UO2" ){
+
+            return new EQM_PWR_POL_UO2(command.str());
+        }else {
+            throw cyclus::ValidationError("Bad EqModel keyword");
+        }
+    }
+
+    XSModel* XSmodelfor(std::string name, std::stringstream& command){
+
+        if( name == "XSM_MLP" ){
+            return new XSM_MLP(command.str());
+        }else {
+            throw cyclus::ValidationError("Bad XSModel keyword");
+        }
+    }
+
+    IrradiationModel* IMmodelfor(std::string name, std::stringstream& command){
+
+        if( name == "RK4" ){
+            return new IM_RK4();
+        }else if( name == "MATRIX" ){
+            return new IM_Matrix();
+        }else{
+            throw cyclus::ValidationError("Bad IMModel keyword");
+        }
+        
+    }
+    CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::stringstream& EQcommand,
+                                   std::string XSModel, std::stringstream& XScommand,
+                                   std::string IMModel, std::stringstream& IMcommand){
 
         cyDBGL
         myPhysicsModel = new PhysicsModels();
-        if( EqModel == "xx"){
-            myPhysicsModel->SetEquivlalenceModel(new EquivalenceModel());
-        }
-        else if(EqModel == "xx" ){
-            myPhysicsModel->SetEquivlalenceModel(new EquivalenceModel());
-        }
 
-        if( XSModel == "xx"){
-            myPhysicsModel->SetXSModel(new XSModel());
-        }
-        else if(EqModel == "xx" ){
-            myPhysicsModel->SetXSModel(new XSModel());
-        }
-
-
-        if( BatemanSolver == "ii"){
-            myPhysicsModel->SetIrradiationModel(new IrradiationModel());
-        }
-        else if(BatemanSolver == "ii" ){
-            myPhysicsModel->SetIrradiationModel(new IrradiationModel());
-        }
+        myPhysicsModel->SetEquivlalenceModel(   EQmodelfor(EQModel, EQcommand) );
+        myPhysicsModel->SetXSModel(             XSmodelfor(XSModel, XScommand) );
+        myPhysicsModel->SetIrradiationModel(    IMmodelfor(IMModel, IMcommand) );
 
         cyDBGL
 
@@ -111,7 +253,7 @@ namespace cyclass {
 
     }
 
-    cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(CompMap InitialCompo, double power, double mass, double burnup){
+    cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(cyclus::Composition::Ptr InitialCompo, double power, double mass, double burnup){
 
         IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
 
@@ -235,49 +377,46 @@ namespace cyclass {
     CompMap operator*(double F, CompMap const& IVA) { return IVA*F; };
 
     //________________________________________________________________________
-    IsotopicVector CYCLUS2CLASS(CompMap const& c_compo){
+    IsotopicVector CYCLUS2CLASS(CompMap c_compo){
 
         IsotopicVector IV;
-        CompMap::iterator it;
+        map<int, double>::iterator it;
 
         for( it = c_compo.begin(); it != c_compo.end(); it++){
-            int Z = (int)c_fissil->first /10000000 ;
-            int A = (int)(c_fissil->first - Z)/10000;
-            int I = 0;
-            if( c_fissil->first - Z - A > 0 ) I++;
-            IV += c_fissil->second() * ZAI(Z, A, I);
+            int Z = (int)it->first/10000 ;
+            int A = (int)(it->first/10)%1000;
+            int I = (int) it->first%10%10;
+
+            IV += it->second * ZAI(Z, A, I);
         }
 
         return IV;
     }
 
     //________________________________________________________________________
+    IsotopicVector CYCLUS2CLASS(cyclus::Composition::Ptr c_compo){
+        return CYCLUS2CLASS(c_compo->atom());
+
+    }
+
+    //________________________________________________________________________
     CompMap CLASS2CYCLUS(IsotopicVector const& IV){
 
-        CompoMap myCompoMap;
+        CompMap myCompMap;
 
         map<ZAI, double> IsotopicMap = IV.GetIsotopicQuantity();
         map<ZAI, double>::iterator it;
 
         for(it = IsotopicMap.begin(); it != IsotopicMap.end(); it++){
 
-            Nuc MyNuc = it->first.Z()*10000000 + it->first.A()*10000;
-            if( I >0){
-                std::cout << "you are screwed!! Isomer conversion from CLASS to CYCLUS... did not work yet..." <<std::endl;
-                exit(1);
-            }
-
-            myCompMap.insert( pair<Muc, double> (MyNuc, it->second) );
+            Nuc MyNuc = it->first.Z()*10000 + it->first.A()*10 + it->first.I();
+            myCompMap.insert( pair<Nuc, double> (MyNuc, it->second) );
         }
-        return myCompoMap;
-
-
+        return myCompMap;
     }
 
 
     //________________________________________________________________________
-
-
 
 
 

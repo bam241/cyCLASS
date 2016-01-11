@@ -11,8 +11,8 @@ using cyclus::Nuc;
 
 typedef std::map<Nuc, double> CompMap;
 
-//#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
-#define DBGL		;
+//#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
+#define cyDBGL		;
 
 namespace cyclass {
 
@@ -33,7 +33,7 @@ namespace cyclass {
         cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
                                                    "the Reactor archetype "
                                                    "is experimental");
-        MyCLASSAdaptator = new CLASSAdaptator();
+//        MyCLASSAdaptator = new CLASSAdaptator();
 
     }
 
@@ -89,7 +89,7 @@ namespace cyclass {
 
     //________________________________________________________________________
     void Reactor::Tick() {
-        DBGL
+        cyDBGL
        // The following code must go in the Tick so they fire on the time step
         // following the cycle_step update - allowing for the all reactor events to
         // occur and be recorded on the "beginning" of a time step.  Another reason
@@ -158,13 +158,13 @@ namespace cyclass {
             }
         }
 
-        DBGL
+        cyDBGL
     }
 
     //________________________________________________________________________
     std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         using cyclus::RequestPortfolio;
-        DBGL
+        cyDBGL
 
         std::set<RequestPortfolio<Material>::Ptr> ports;
         Material::Ptr m;
@@ -218,7 +218,7 @@ namespace cyclass {
                 Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
                 Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
-                double Enrch = MyCLASSAdtator->GetEnrichment(fissil_stream, fertil_stream, burnup );
+                double Enrch = MyCLASSAdaptator->GetEnrichment(fissil_stream, fertil_stream, burnup );
 
                 Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
@@ -231,7 +231,7 @@ namespace cyclass {
             ports.insert(port);
         }
 
-        DBGL
+        cyDBGL
        return ports;
     }
 
@@ -383,9 +383,9 @@ namespace cyclass {
         Record("TRANSMUTE", ss.str());
 
         for (int i = 0; i < old.size(); i++) {
-            double mass = old[i].quantity();
-            cyclus::Composition::ptr compo = old[i].comp()
-            old[i]->Transmute( MyCLASSAdaptator->GetCompAfterIrradiation( compo, power,mass , burnup)  );
+            double mass = old[i]->quantity();
+            cyclus::Composition::Ptr compo = old[i]->comp();
+            old[i]->Transmute( MyCLASSAdaptator->GetCompAfterIrradiation( compo, power, mass , burnup)  );
         }
     }
 

@@ -3,7 +3,7 @@
 
 
 
-#include "bu_solver_mlp.h"
+#include "CLASSAdaptator.h"
 
 #include <string>
 #include "cyclus.h"
@@ -62,7 +62,7 @@ namespace cyclass {
 
     private:
 
-        MLPBUsolver* MyBUSolver;
+        CLASSAdaptator* MyCLASSAdaptator;
 
 
 #pragma cyclus var { \

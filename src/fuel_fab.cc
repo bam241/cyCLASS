@@ -6,8 +6,8 @@ using cyclus::Material;
 using cyclus::Composition;
 using pyne::simple_xs;
 
-//#define DBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
-#define DBGL		;
+//#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
+#define cyDBGL		;
 
 #define SHOW(X)                                                     \
 std::cout << std::setprecision(17) << __FILE__ << ":" << __LINE__ \
@@ -78,17 +78,17 @@ namespace cyclass {
     //________________________________________________________________________
     FuelFab::FuelFab(cyclus::Context* ctx)
     : cyclus::Facility(ctx), fill_size(0), fiss_size(0), throughput(0) {
-        DBGL
+        cyDBGL
         cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
                                                    "the FuelFab archetype "
                                                    "is experimental");
-        MyBUSolver = new MLPBUsolver();
+//        MyBUSolver = new MLPBUsolver();
 
-DBGL
+cyDBGL
     }
 
     void FuelFab::EnterNotify() {
-        DBGL
+        cyDBGL
         cyclus::Facility::EnterNotify();
 
         if (fiss_commod_prefs.empty()) {
@@ -112,14 +112,14 @@ DBGL
             << " fill_commod_prefs vals, expected " << fill_commods.size();
             throw cyclus::ValidationError(ss.str());
         }
-        DBGL
+        cyDBGL
     }
 
     //________________________________________________________________________
     std::set<cyclus::RequestPortfolio<Material>::Ptr> FuelFab::GetMatlRequests() {
         using cyclus::RequestPortfolio;
 
-        DBGL
+        cyDBGL
         std::set< RequestPortfolio<Material>::Ptr > ports;
 
         bool exclusive = false;
@@ -164,19 +164,19 @@ DBGL
             ports.insert(port);
         }
 
-        DBGL
+        cyDBGL
       return ports;
     }
 
     //________________________________________________________________________
     bool Contains(std::vector<std::string> vec, std::string s) {
-        DBGL
+        cyDBGL
         for (int i = 0; i < vec.size(); i++) {
             if (vec[i] == s) {
                 return true;
             }
         }
-        DBGL
+        cyDBGL
        return false;
     }
 
@@ -184,7 +184,7 @@ DBGL
     void FuelFab::AcceptMatlTrades(const std::vector<
                                    std::pair<cyclus::Trade<Material>,
                                    Material::Ptr> >& responses) {
-        DBGL
+        cyDBGL
        std::vector< std::pair <cyclus::Trade<cyclus::Material>, cyclus::Material::Ptr> >::const_iterator trade;
 
         for (trade = responses.begin(); trade != responses.end(); ++trade) {
@@ -211,13 +211,13 @@ DBGL
         if (fiss.count() > 1) {
             fiss.Push(cyclus::toolkit::Squash(fiss.PopN(fiss.count())));
         }
-        DBGL
+        cyDBGL
     }
 
     //________________________________________________________________________
     std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
                                                                        cyclus::CommodMap<Material>::type& commod_requests) {
-        DBGL
+        cyDBGL
         using cyclus::BidPortfolio;
 
         std::set<BidPortfolio<Material>::Ptr> ports;
@@ -249,14 +249,14 @@ DBGL
 
         BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
         for (int j = 0; j < reqs.size(); j++) {
-            DBGL
+            cyDBGL
           cyclus::Request<Material>* req = reqs[j];
 
             Composition::Ptr tgt = req->target()->comp();
             double tgt_qty = req->target()->quantity();
-            double BU_tgt = MyBUSolver->GetBU(tgt);
+            double BU_tgt = MyCLASSAdaptator->GetBU(tgt);
 
-            double fiss_frac = MyBUSolver->GetEnrichment(c_fiss, c_fill, BU_tgt);
+            double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
 
 
             double fill_frac = 1 - fiss_frac;
@@ -271,7 +271,7 @@ DBGL
 
             bool exclusive = false;
             port->AddBid(req, m1, this, exclusive);
-            DBGL
+            cyDBGL
         }
 
         cyclus::Converter<Material>::Ptr fissconv( new FissConverter(c_fill, c_fiss) );
@@ -289,7 +289,7 @@ DBGL
         cyclus::CapacityConstraint<Material> cc(throughput);
         port->AddConstraint(cc);
         ports.insert(port);
-        DBGL
+        cyDBGL
         return ports;
     }
 
@@ -299,7 +299,7 @@ DBGL
                                 std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
                                 responses) {
         using cyclus::Trade;
-        DBGL
+        cyDBGL
 
         // guard against cases where a buffer is empty - this is okay because some trades
         // may not need that particular buffer.
@@ -338,9 +338,9 @@ DBGL
                 Composition::Ptr c_fiss = fiss.Peek()->comp();
                 Composition::Ptr c_fill = fill.Peek()->comp();
 
-                double BU_tgt = MyBUSolver->GetBU(tgt->comp());
+                double BU_tgt = MyCLASSAdaptator->GetBU(tgt->comp());
 
-                double fiss_frac = MyBUSolver->GetEnrichment(c_fiss, c_fill, BU_tgt);
+                double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
                 double fill_frac = 1-fiss_frac;
 
                 //Atomic to mass conversion...
@@ -367,12 +367,12 @@ DBGL
             }
 
         }
-        DBGL
+        cyDBGL
    }
 
     //________________________________________________________________________
     extern "C" cyclus::Agent* ConstructFuelFab(cyclus::Context* ctx) {
-        DBGL
+        cyDBGL
        return new FuelFab(ctx);
     }
 
