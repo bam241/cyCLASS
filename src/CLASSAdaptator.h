@@ -31,9 +31,9 @@ namespace cyclass {
     public:
 
 
-        CLASSAdaptator(std::string EqModel, std::stringstream& EQcommand,
-                       std::string XSModel, std::stringstream& XScommand,
-                       std::string IMModel, std::stringstream& IMcommand);
+        CLASSAdaptator(std::string EqModel, std::string EQcommand,
+                       std::string XSModel, std::string XScommand,
+                       std::string IMModel, std::string IMcommand);
 
         // Lauch the MLP (using TMVA) to predict the requeirt fissil enrichment (according to the compisition of fissil and fertil stream and the targeted burnup)
         float GetEnrichment(cyclus::Composition::Ptr c_fissil,
@@ -88,9 +88,9 @@ namespace cyclass {
     CompMap         CLASS2CYCLUS(IsotopicVector const& IV);
 
 
-    EquivalenceModel* EQmodelfor(std::string name, std::stringstream& command);
-    XSModel* XSmodelfor(std::string name, std::stringstream& command);
-    IrradiationModel* IMmodelfor(std::string name, std::stringstream& command);
+    EquivalenceModel* EQmodelfor(std::string name, std::string command);
+    XSModel* XSmodelfor(std::string name, std::string command);
+    IrradiationModel* IMmodelfor(std::string name, std::string command);
 
 
 

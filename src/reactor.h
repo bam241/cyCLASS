@@ -242,6 +242,47 @@ namespace cyclass {
 }
         int n_assem_spent;
 
+      ///////// Model params ///////////
+
+#pragma cyclus var { \
+"doc": "Cross Secction Model name.",	\
+"uilabel": "Name of the XS Model", \
+}
+      std::string XSModel;
+#pragma cyclus var { \
+"doc": "Cross Section Parameter line",	\
+"uilabel": "Parameter line for the cross section model", \
+}
+      std::string XSCommand;
+
+
+
+#pragma cyclus var { \
+"doc": "Irradition Model name.",	\
+"uilabel": "Name of the irradiation Model", \
+}
+      std::string IRModel;
+#pragma cyclus var { \
+"doc": "Irradition Parameter line",	\
+"uilabel": "Parameter line for the irradiation model", \
+}
+
+      std::string IRCommand;
+
+
+#pragma cyclus var { \
+"doc": "Equivalence Model name.",	\
+"uilabel": "Name of the equivalence Model", \
+}
+      std::string EQModel;
+#pragma cyclus var { \
+"doc": "equivalence Parameter line",	\
+"uilabel": "Parameter line for the equivalence model", \
+}
+      std::string EQCommand;
+
+
+
         ///////// cycle params ///////////
 #pragma cyclus var { \
 "doc": "Discharge burnup.",	\

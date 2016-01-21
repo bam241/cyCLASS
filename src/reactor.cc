@@ -33,7 +33,9 @@ namespace cyclass {
         cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
                                                    "the Reactor archetype "
                                                    "is experimental");
-//        MyCLASSAdaptator = new CLASSAdaptator();
+
+
+      MyCLASSAdaptator = new CLASSAdaptator(EQModel, EQCommand, XSModel, XSCommand, IRModel, IRCommand);
 
     }
 
