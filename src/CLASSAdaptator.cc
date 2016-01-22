@@ -152,7 +152,12 @@ namespace cyclass {
 
       return new EQM_PWR_POL_UO2(command.c_str());
     }else {
-      throw cyclus::ValidationError("Bad EqModel keyword");
+
+      stringstream msg;
+
+      std::cout << "my name is " << name << endl;
+      msg <<"Bad EqModel keyword " << name ;
+      throw cyclus::ValidationError(msg.str());
     }
   }
 
@@ -161,7 +166,9 @@ namespace cyclass {
     if( name == "XSM_MLP" ){
       return new XSM_MLP(command.c_str());
     }else {
-      throw cyclus::ValidationError("Bad XSModel keyword");
+      stringstream msg;
+      msg <<"Bad XSModel keyword " << name ;
+      throw cyclus::ValidationError(msg.str());
     }
   }
 
@@ -172,10 +179,23 @@ namespace cyclass {
     }else if( name == "MATRIX" ){
       return new IM_Matrix();
     }else{
-      throw cyclus::ValidationError("Bad IMModel keyword");
+      stringstream msg;
+      msg <<"Bad IRModel keyword " << name ;
+      throw cyclus::ValidationError(msg.str());
     }
 
   }
+
+  CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::string EQcommand){
+
+    cyDBGL
+    myPhysicsModel = new PhysicsModels();
+
+    myPhysicsModel->SetEquivlalenceModel(   EQmodelfor(EQModel, EQcommand) );
+    cyDBGL
+    
+  }
+
   CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::string EQcommand,
                                  std::string XSModel, std::string XScommand,
                                  std::string IMModel, std::string IMcommand){
@@ -202,8 +222,9 @@ namespace cyclass {
     IsotopicVector IV_fissil = CYCLUS2CLASS(c_fissil);
     IsotopicVector IV_fertil = CYCLUS2CLASS(c_fertil);
 
+    cout << "toto 1"<< endl;
     val= myPhysicsModel->GetEquivalenceModel()->GetFissileMolarFraction(IV_fissil, IV_fertil, BurnUp);
-
+    cout << "toto 2"<< endl;
     cyDBGL
 
     return val; //
@@ -390,9 +411,9 @@ namespace cyclass {
     map<int, double>::iterator it;
 
     for( it = c_compo.begin(); it != c_compo.end(); it++){
-      int Z = (int)it->first/10000 ;
-      int A = (int)(it->first/10)%1000;
-      int I = (int) it->first%10%10;
+      int Z = (int)it->first/10000000 ;
+      int A = (int)(it->first/10000)%1000;
+      int I = (int) it->first%10000;
 
       IV += it->second * ZAI(Z, A, I);
     }

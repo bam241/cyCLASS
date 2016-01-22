@@ -9,6 +9,7 @@ using cyclus::ValueError;
 using cyclus::Request;
 using cyclus::Nuc;
 
+#include <ostream>
 typedef std::map<Nuc, double> CompMap;
 
 //#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
@@ -29,13 +30,16 @@ namespace cyclass {
     cycle_step(0),
     power_cap(0),
     power_name("power"),
+  xs_model("xs"),
+  xs_command("xs"),
+  ir_model("ir"),
+  ir_command("ir"),
+  eq_model("ir"),
+  eq_command("ir"),
     discharged(false) {
-        cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
-                                                   "the Reactor archetype "
+        cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>("the Reactor archetype "
                                                    "is experimental");
 
-
-      MyCLASSAdaptator = new CLASSAdaptator(EQModel, EQCommand, XSModel, XSCommand, IRModel, IRCommand);
 
     }
 
@@ -168,6 +172,9 @@ namespace cyclass {
         using cyclus::RequestPortfolio;
         cyDBGL
 
+      if (!MyCLASSAdaptator) {
+        MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model, xs_command, ir_model, ir_command);
+      }
         std::set<RequestPortfolio<Material>::Ptr> ports;
         Material::Ptr m;
 

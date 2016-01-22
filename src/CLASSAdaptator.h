@@ -31,6 +31,9 @@ namespace cyclass {
     public:
 
 
+      CLASSAdaptator(std::string EqModel, std::string EQcommand);
+
+
         CLASSAdaptator(std::string EqModel, std::string EQcommand,
                        std::string XSModel, std::string XScommand,
                        std::string IMModel, std::string IMcommand);

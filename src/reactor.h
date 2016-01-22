@@ -248,12 +248,12 @@ namespace cyclass {
 "doc": "Cross Secction Model name.",	\
 "uilabel": "Name of the XS Model", \
 }
-      std::string XSModel;
+      std::string xs_model;
 #pragma cyclus var { \
 "doc": "Cross Section Parameter line",	\
 "uilabel": "Parameter line for the cross section model", \
 }
-      std::string XSCommand;
+      std::string xs_command;
 
 
 
@@ -261,25 +261,25 @@ namespace cyclass {
 "doc": "Irradition Model name.",	\
 "uilabel": "Name of the irradiation Model", \
 }
-      std::string IRModel;
+      std::string ir_model;
 #pragma cyclus var { \
 "doc": "Irradition Parameter line",	\
 "uilabel": "Parameter line for the irradiation model", \
 }
-
-      std::string IRCommand;
+      std::string ir_command;
 
 
 #pragma cyclus var { \
+"default": "eq", \
 "doc": "Equivalence Model name.",	\
 "uilabel": "Name of the equivalence Model", \
 }
-      std::string EQModel;
+      std::string eq_model;
 #pragma cyclus var { \
 "doc": "equivalence Parameter line",	\
 "uilabel": "Parameter line for the equivalence model", \
 }
-      std::string EQCommand;
+      std::string eq_command;
 
 
 

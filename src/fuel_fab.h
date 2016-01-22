@@ -114,6 +114,23 @@ namespace cyclass {
 "default": "", \
 }
         std::string fiss_recipe;
+      ///////// Model params ///////////
+
+
+
+#pragma cyclus var { \
+"doc": "Equivalence Model name.",	\
+"uilabel": "Name of the equivalence Model", \
+}
+      std::string eqmodel;
+#pragma cyclus var { \
+"doc": "equivalence Parameter line",	\
+"uilabel": "Parameter line for the equivalence model", \
+}
+      std::string eqcommand;
+
+
+
 #pragma cyclus var { \
 "doc": "Size of fissile material stream inventory.", \
 "uilabel": "Fissile Stream Inventory Capacity", \
