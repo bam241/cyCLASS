@@ -153,24 +153,49 @@ namespace cyclass {
       return new EQM_PWR_POL_UO2(command.c_str());
     }else {
 
-      stringstream msg;
-
-      std::cout << "my name is " << name << endl;
+      std::stringstream msg;
       msg <<"Bad EqModel keyword " << name ;
       throw cyclus::ValidationError(msg.str());
     }
   }
 
+
   XSModel* XSmodelfor(std::string name, std::string command){
 
+    std::stringstream command_t;
+    command_t << command;
+
+
+
     if( name == "XSM_MLP" ){
-      return new XSM_MLP(command.c_str());
+
+      std::string buff;
+      getline( command_t, buff, ',' );
+      string TMVA_Weight_Dir = buff;
+      getline( command_t, buff, ',' );
+      string Info = buff;
+      getline( command_t, buff, ',' );
+
+      bool istime;
+      if(buff == "true"){
+        istime = true;
+      }else if (buff == "false"){
+        istime = false;
+      } else{
+        std::stringstream msg;
+        msg << "bad XSmodel command: " << command << " for " << name << " Model ";
+        throw cyclus::ValidationError(msg.str());
+      }
+      return new XSM_MLP(TMVA_Weight_Dir.c_str(), Info.c_str(), istime);
+
     }else {
       stringstream msg;
       msg <<"Bad XSModel keyword " << name ;
       throw cyclus::ValidationError(msg.str());
     }
   }
+
+
 
   IrradiationModel* IMmodelfor(std::string name, std::string command){
 
@@ -192,8 +217,17 @@ namespace cyclass {
     myPhysicsModel = new PhysicsModels();
 
     myPhysicsModel->SetEquivlalenceModel(   EQmodelfor(EQModel, EQcommand) );
+
+    IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetFissileList();
+    if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
+      IV_fissil += ZAI(95,241,0)*1;
+
+
+    fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
+
+    fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetFertileList()));
     cyDBGL
-    
+
   }
 
   CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::string EQcommand,
@@ -207,6 +241,14 @@ namespace cyclass {
     myPhysicsModel->SetXSModel(             XSmodelfor(XSModel, XScommand) );
     myPhysicsModel->SetIrradiationModel(    IMmodelfor(IMModel, IMcommand) );
 
+    IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetFissileList();
+    if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
+      IV_fissil += ZAI(95,241,0)*1;
+
+
+    fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
+
+    fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetFertileList()));
     cyDBGL
 
   }
@@ -222,9 +264,7 @@ namespace cyclass {
     IsotopicVector IV_fissil = CYCLUS2CLASS(c_fissil);
     IsotopicVector IV_fertil = CYCLUS2CLASS(c_fertil);
 
-    cout << "toto 1"<< endl;
     val= myPhysicsModel->GetEquivalenceModel()->GetFissileMolarFraction(IV_fissil, IV_fertil, BurnUp);
-    cout << "toto 2"<< endl;
     cyDBGL
 
     return val; //
@@ -244,17 +284,30 @@ namespace cyclass {
 
 
 
+    cyDBGL
     if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-10 ){
-      std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
+
+      std::stringstream msg;
+      msg << "You fuel has nuclei that this model could not manage.."<< std::endl;
+      msg << "Missing " << std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel));
+      msg << " Nuclei" << std::endl;
+      
+      CompMap fuel_map = fuel->atom();
+      CompMap::iterator it;
+      for (it = fuel_map.begin(); it != fuel_map.end(); it++)
+        msg << it->first << " " << it->second << std::endl;
+
       exit(1);
     }
 
 
+    cyDBGL
     float rho_target = AtomIn(fuel_fissil)/AtomIn(fuel);
     float rho_min = GetEnrichment(fuel_fissil, fuel_fertil, BU_min);
     float rho_max = GetEnrichment(fuel_fissil, fuel_fertil, BU_max);
     float BU_estimation = BU_max;
     float rho_estimated = rho_max;
+    cyDBGL
 
     do {
       //Update BU_estimation
@@ -284,11 +337,9 @@ namespace cyclass {
   cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(cyclus::Composition::Ptr InitialCompo, double power, double mass, double burnup){
 
     IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
+    cSecond finaltime = burnup*mass /(power*1e-3) *3600*24;
 
-    cSecond finaltime = burnup /(power*1e-3) /mass *3600*24;
-
-    EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power);
-
+    EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power*1e3);
     IsotopicVector AfterIrradiationIV = myEvolution.GetIsotopicVectorAt(finaltime);
 
     return Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
@@ -306,7 +357,7 @@ namespace cyclass {
     CompMap::iterator it;
 
     for(it = Source.begin(); it != Source.end(); it++)
-    total += it->second;
+      total += it->second;
 
     return total;
   }
@@ -319,23 +370,29 @@ namespace cyclass {
                                                 cyclus::Composition::Ptr source,
                                                 cyclus::Composition::Ptr list){
 
+    cyDBGL
     //create Output Composition
     CompMap separatedCompo;
 
+    cyDBGL
     // Extract Nuc map from source compo & list...
     CompMap sourceComp = source->atom();
+    cyDBGL
     CompMap ListComp = list->atom();
+    cyDBGL
 
     CompMap::iterator it;
+    cyDBGL
 
     // Fill output composition
     for (it = ListComp.begin(); it != ListComp.end(); it++) {
       CompMap::iterator it2 = sourceComp.find( it->first );
 
       if(it2 != sourceComp.end())
-      separatedCompo.insert( std::pair<Nuc,double>(it->first, it2->second) );
+        separatedCompo.insert( std::pair<Nuc,double>(it->first, it2->second) );
 
     }
+    cyDBGL
 
     return Composition::CreateFromAtom(separatedCompo);
   }
@@ -345,7 +402,7 @@ namespace cyclass {
     double Total = AtomIn(source);
     CompMap::iterator it;
     for(it = source.begin(); it != source.end(); it++)
-    it->second *= norm/Total;
+      it->second *= norm/Total;
 
     return source;
   }
@@ -362,7 +419,7 @@ namespace cyclass {
       std::pair<CompMap::iterator, bool> IResult;
       IResult = IVtmp.insert(std::pair<Nuc, double> (it->first, it->second));
       if(!IResult.second)
-      IResult.first->second += it->second;
+        IResult.first->second += it->second;
 
     }
     return IVtmp;
@@ -376,7 +433,7 @@ namespace cyclass {
     CompMap::iterator it;
 
     for(it = IVtmp.begin(); it != IVtmp.end(); it++)
-    it->second *= F;
+      it->second *= F;
 
     return IVtmp;
   }
@@ -429,23 +486,25 @@ namespace cyclass {
 
   //________________________________________________________________________
   CompMap CLASS2CYCLUS(IsotopicVector const& IV){
-
+    
     CompMap myCompMap;
-
+    
     map<ZAI, double> IsotopicMap = IV.GetIsotopicQuantity();
     map<ZAI, double>::iterator it;
-
+    
     for(it = IsotopicMap.begin(); it != IsotopicMap.end(); it++){
 
-      Nuc MyNuc = it->first.Z()*10000 + it->first.A()*10 + it->first.I();
-      myCompMap.insert( pair<Nuc, double> (MyNuc, it->second) );
+      if(it->first.Z() > 0 && it->first.A() > 0 && it->first.I() >= 0  ){
+        Nuc MyNuc = it->first.Z()*10000000 + it->first.A()*10000 + it->first.I();
+        myCompMap.insert( pair<Nuc, double> (MyNuc, it->second) );
+      }
     }
     return myCompMap;
   }
-
-
+  
+  
   //________________________________________________________________________
-
-
-
+  
+  
+  
 } // namespace cyclass

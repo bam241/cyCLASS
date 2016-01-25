@@ -119,15 +119,16 @@ namespace cyclass {
 
 
 #pragma cyclus var { \
+"default": "eq", \
 "doc": "Equivalence Model name.",	\
 "uilabel": "Name of the equivalence Model", \
 }
-      std::string eqmodel;
+      std::string eq_model;
 #pragma cyclus var { \
 "doc": "equivalence Parameter line",	\
 "uilabel": "Parameter line for the equivalence model", \
 }
-      std::string eqcommand;
+      std::string eq_command;
 
 
 

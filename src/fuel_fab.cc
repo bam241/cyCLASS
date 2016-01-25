@@ -76,12 +76,18 @@ namespace cyclass {
 
 
   //________________________________________________________________________
-  FuelFab::FuelFab(cyclus::Context* ctx)
-  : cyclus::Facility(ctx), fill_size(0), fiss_size(0), throughput(0) {
+  FuelFab::FuelFab(cyclus::Context* ctx):
+  cyclus::Facility(ctx),
+  fill_size(0),
+  fiss_size(0),
+  throughput(0),
+  eq_model("eq"),
+  eq_command("eq"){
     cyDBGL
     cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
                                                "the FuelFab archetype "
                                                "is experimental");
+    MyCLASSAdaptator = 0;
 
     cyDBGL
   }
@@ -225,7 +231,7 @@ namespace cyclass {
     std::vector<cyclus::Request<Material>*>& reqs = commod_requests[outcommod];
 
     if(!MyCLASSAdaptator){
-      MyCLASSAdaptator = new CLASSAdaptator(eqmodel, eqcommand);
+      MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command);
     }
 
     if (throughput == 0) {
@@ -255,23 +261,31 @@ namespace cyclass {
     for (int j = 0; j < reqs.size(); j++) {
       cyDBGL
       cyclus::Request<Material>* req = reqs[j];
+      cyDBGL
 
       Composition::Ptr tgt = req->target()->comp();
+      cyDBGL
       double tgt_qty = req->target()->quantity();
+      cyDBGL
       double BU_tgt = MyCLASSAdaptator->GetBU(tgt);
 
+      cyDBGL
       double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
+      cyDBGL
 
 
       double fill_frac = 1 - fiss_frac;
+      cyDBGL
 
       fiss_frac = AtomToMassFrac(fiss_frac, c_fiss, c_fill);
       fill_frac = AtomToMassFrac(fill_frac, c_fill, c_fiss);
 
       Material::Ptr m1 = Material::CreateUntracked(fiss_frac * tgt_qty, c_fiss);
+      cyDBGL
 
       Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
       m1->Absorb(m2);
+      cyDBGL
 
       bool exclusive = false;
       port->AddBid(req, m1, this, exclusive);
@@ -304,6 +318,10 @@ namespace cyclass {
                               responses) {
     using cyclus::Trade;
     cyDBGL
+
+    if(!MyCLASSAdaptator){
+      MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command);
+    }
 
     // guard against cases where a buffer is empty - this is okay because some trades
     // may not need that particular buffer.
