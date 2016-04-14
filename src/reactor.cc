@@ -214,12 +214,8 @@ namespace cyclass {
 
         //Defining the Stream composition
         CompMap fissil_comp;
-        fissil_comp.insert(std::pair<Nuc, double>(942380000,0.28));
-        fissil_comp.insert(std::pair<Nuc, double>(942390000,4.65));
-        fissil_comp.insert(std::pair<Nuc, double>(942400000,2.19));
-        fissil_comp.insert(std::pair<Nuc, double>(942410000,1.06));
-        fissil_comp.insert(std::pair<Nuc, double>(942420000,0.73));
-        fissil_comp.insert(std::pair<Nuc, double>(952410000,0.1));
+        fissil_comp.insert(std::pair<Nuc, double>(942390000,100));
+
         fissil_comp =  NormalizeComp(fissil_comp);
 
         CompMap fertil_comp;

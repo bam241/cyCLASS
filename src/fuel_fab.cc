@@ -292,14 +292,14 @@ namespace cyclass {
       cyDBGL
     }
 
-    cyclus::Converter<Material>::Ptr fissconv( new FissConverter(c_fill, c_fiss) );
-    cyclus::Converter<Material>::Ptr fillconv( new FillConverter(c_fill, c_fiss) );
+    //cyclus::Converter<Material>::Ptr fissconv( new FissConverter(c_fill, c_fiss) );
+    //cyclus::Converter<Material>::Ptr fillconv( new FillConverter(c_fill, c_fiss) );
     // important! - the std::max calls prevent CapacityConstraint throwing a zero
     // cap exception
-    cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10),
-                                               fissconv);
-    cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),
-                                               fillconv);
+    //cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10),fissconv);
+    //cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),fillconv);
+cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10));
+    cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10));
 
     port->AddConstraint(fillc);
     port->AddConstraint(fissc);
