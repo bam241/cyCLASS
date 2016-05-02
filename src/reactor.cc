@@ -214,7 +214,11 @@ namespace cyclass {
 
         //Defining the Stream composition
         CompMap fissil_comp;
-        fissil_comp.insert(std::pair<Nuc, double>(942390000,100));
+        fissil_comp.insert(std::pair<Nuc, double>(942380000,1));
+        fissil_comp.insert(std::pair<Nuc, double>(942390000,60));
+        fissil_comp.insert(std::pair<Nuc, double>(942400000,19));
+        fissil_comp.insert(std::pair<Nuc, double>(942410000,7));
+        fissil_comp.insert(std::pair<Nuc, double>(942420000,5));
 
         fissil_comp =  NormalizeComp(fissil_comp);
 
@@ -227,7 +231,7 @@ namespace cyclass {
         Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
         double Enrch = MyCLASSAdaptator->GetEnrichment(fissil_stream, fertil_stream, burnup );
-
+        
         Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
         m = Material::CreateUntracked(assem_size, fuel);
@@ -408,6 +412,7 @@ namespace cyclass {
       cyDBGL
       cyclus::Composition::Ptr compo = old[i]->comp();
       cyDBGL
+      std::cout << "BU " << burnup << " P " << power << " M " << mass << std::endl;
       old[i]->Transmute( MyCLASSAdaptator->GetCompAfterIrradiation( compo, power, mass , burnup)  );
       cyDBGL
     }

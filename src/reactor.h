@@ -256,7 +256,6 @@ namespace cyclass {
       std::string xs_command;
 
 
-
 #pragma cyclus var { \
 "doc": "Irradition Model name.",	\
 "uilabel": "Name of the irradiation Model", \

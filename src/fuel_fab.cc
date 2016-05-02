@@ -268,12 +268,13 @@ namespace cyclass {
       double tgt_qty = req->target()->quantity();
       cyDBGL
       double BU_tgt = MyCLASSAdaptator->GetBU(tgt);
-
+      
+      
       cyDBGL
       double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
       cyDBGL
 
-
+      cout << "fissil Fraction" << fiss_frac << endl;
       double fill_frac = 1 - fiss_frac;
       cyDBGL
 
@@ -284,7 +285,20 @@ namespace cyclass {
       cyDBGL
 
       Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
+      
       m1->Absorb(m2);
+
+      cyclus::CompMap tt = m1->comp()->atom();
+      cyclus::CompMap::iterator it;
+      double sum = 0;
+      for (it = tt.begin(); it != tt.end(); it++) {
+        sum += it->second;
+      }
+      
+      for (it = tt.begin(); it != tt.end(); it++) {
+        cout << it->first << "  " << it->second/sum << endl;
+      }
+      
       cyDBGL
 
       bool exclusive = false;
@@ -298,7 +312,7 @@ namespace cyclass {
     // cap exception
     //cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10),fissconv);
     //cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),fillconv);
-cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10));
+    cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10));
     cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10));
 
     port->AddConstraint(fillc);

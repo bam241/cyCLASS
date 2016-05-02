@@ -108,7 +108,7 @@ namespace cyclass {
     }else if( name == "MLP_Kinf" ){
 
 
-      std::string WeightPathAlpha0;
+/*      std::string WeightPathAlpha0;
       getline( command_t, WeightPathAlpha0, ',' );
 
       std::string WeightPathAlpha1;
@@ -116,25 +116,36 @@ namespace cyclass {
 
       std::string WeightPathAlpha2;
       getline( command_t, WeightPathAlpha2, ',' );
-
-      std::string InformationFile;
-      getline( command_t, InformationFile, ',' );
-
+*/
+      
+      std::string TMVAWeightPath;
+      getline( command_t, TMVAWeightPath, ',' );
+/*
+ */
       std::string buff;
       getline( command_t, buff, ',' );
       int NumOfBatch = atoi(buff.c_str());
+
+      std::string InformationFile;
+      getline( command_t, InformationFile, ',' );
 
       getline( command_t, buff, ',' );
       double CriticalityThreshold = atof(buff.c_str());
 
 
-      return new EQM_MLP_Kinf(WeightPathAlpha0,
+/*      return new EQM_MLP_Kinf(WeightPathAlpha0,
                               WeightPathAlpha1,
                               WeightPathAlpha2,
                               InformationFile,
                               NumOfBatch,
                               CriticalityThreshold);
+*/
+      return new EQM_MLP_Kinf(TMVAWeightPath,
+                              NumOfBatch,
+                              InformationFile,
+                              CriticalityThreshold);
 
+      
     }else if( name == "PWR_LIN_MOX" ){
 
       return new EQM_PWR_LIN_MOX(command.c_str());
@@ -244,7 +255,7 @@ namespace cyclass {
     IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetFissileList();
     if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
       IV_fissil += ZAI(95,241,0)*1;
-
+    
 
     fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
 
@@ -266,7 +277,7 @@ namespace cyclass {
 
     val= myPhysicsModel->GetEquivalenceModel()->GetFissileMolarFraction(IV_fissil, IV_fertil, BurnUp);
     cyDBGL
-
+    
     return val; //
   }
 
@@ -281,7 +292,6 @@ namespace cyclass {
 
     cyclus::Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, fissil_list);
     cyclus::Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, fertil_list);
-
 
 
     cyDBGL
@@ -337,7 +347,7 @@ namespace cyclass {
   cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(cyclus::Composition::Ptr InitialCompo, double power, double mass, double burnup){
 
     IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
-    cSecond finaltime = burnup*mass /(power*1e-3) *3600*24;
+    cSecond finaltime = burnup*mass /(power) *3600*24;
 
     EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power*1e3);
     IsotopicVector AfterIrradiationIV = myEvolution.GetIsotopicVectorAt(finaltime);
