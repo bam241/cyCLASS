@@ -13,10 +13,7 @@
 
 
 #include "Equivalence/EQM_FBR_BakerRoss_MOX.hxx"
-#include "Equivalence/EQM_FBR_MLP_Keff_BOUND.hxx"
-#include "Equivalence/EQM_PWR_LIN_MOX.hxx"
 #include "Equivalence/EQM_PWR_MLP_MOX_Am.hxx"
-#include "Equivalence/EQM_PWR_QUAD_MOX.hxx"
 #include "Equivalence/EQM_FBR_MLP_Keff.hxx"
 #include "Equivalence/EQM_MLP_Kinf.hxx"
 #include "Equivalence/EQM_PWR_MLP_MOX.hxx"
@@ -78,44 +75,11 @@ namespace cyclass {
       return new EQM_FBR_MLP_Keff(TMVAWeightPath, keff_target, InformationFile);
 
 
-    }else if( name == "FBR_MLP_Keff_BOUND" ){
-
-      std::string TMVAWeightPath;
-      getline( command_t, TMVAWeightPath, ',' );
-
-      std::string buff;
-      getline( command_t, buff, ',' );
-      int NumOfBatch = atoi(buff.c_str());
-
-      getline( command_t, buff, ',' );
-      double LowerKeffective = atof(buff.c_str());
-
-      getline( command_t, buff, ',' );
-      double UpperKeffective = atof(buff.c_str());
-
-      std::string InformationFile;
-      getline( command_t, InformationFile, ',' );
-
-
-
-      return new EQM_FBR_MLP_Keff_BOUND(TMVAWeightPath,
-                                        NumOfBatch,
-                                        LowerKeffective,
-                                        UpperKeffective,
-                                        InformationFile);
-
-
     }else if( name == "MLP_Kinf" ){
 
+      std::string WeightPath;
+      getline( command_t, WeightPath, ',' );
 
-      std::string WeightPathAlpha0;
-      getline( command_t, WeightPathAlpha0, ',' );
-
-      std::string WeightPathAlpha1;
-      getline( command_t, WeightPathAlpha1, ',' );
-
-      std::string WeightPathAlpha2;
-      getline( command_t, WeightPathAlpha2, ',' );
 
       std::string InformationFile;
       getline( command_t, InformationFile, ',' );
@@ -128,23 +92,14 @@ namespace cyclass {
       double CriticalityThreshold = atof(buff.c_str());
 
 
-      return new EQM_MLP_Kinf(WeightPathAlpha0,
-                              WeightPathAlpha1,
-                              WeightPathAlpha2,
-                              InformationFile,
+      return new EQM_MLP_Kinf(WeightPath,
                               NumOfBatch,
+                              InformationFile,
                               CriticalityThreshold);
-
-    }else if( name == "PWR_LIN_MOX" ){
-
-      return new EQM_PWR_LIN_MOX(command.c_str());
 
     }else if( name == "PWR_MLP_MOX_Am" ){
 
       return new EQM_PWR_MLP_MOX_AM(command.c_str());
-    }else if( name == "PWR_QUAD_MOX" ){
-
-      return new EQM_PWR_QUAD_MOX(command.c_str());
     }else if( name == "PWR_MLP_MOX" ){
 
       return new EQM_PWR_MLP_MOX(command.c_str());
@@ -164,8 +119,6 @@ namespace cyclass {
 
     std::stringstream command_t;
     command_t << command;
-
-
 
     if( name == "XSM_MLP" ){
 
@@ -218,14 +171,13 @@ namespace cyclass {
 
     myPhysicsModel->SetEquivlalenceModel(   EQmodelfor(EQModel, EQcommand) );
 
-    IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetFissileList();
+    IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fissile");
     if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
       IV_fissil += ZAI(95,241,0)*1;
 
-
     fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
 
-    fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetFertileList()));
+    fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fertile")));
     cyDBGL
 
   }
@@ -241,14 +193,14 @@ namespace cyclass {
     myPhysicsModel->SetXSModel(             XSmodelfor(XSModel, XScommand) );
     myPhysicsModel->SetIrradiationModel(    IMmodelfor(IMModel, IMcommand) );
 
-    IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetFissileList();
+    IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fissile");
     if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
       IV_fissil += ZAI(95,241,0)*1;
 
 
     fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
 
-    fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetFertileList()));
+    fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fertile")));
     cyDBGL
 
   }
@@ -264,7 +216,11 @@ namespace cyclass {
     IsotopicVector IV_fissil = CYCLUS2CLASS(c_fissil);
     IsotopicVector IV_fertil = CYCLUS2CLASS(c_fertil);
 
-    val= myPhysicsModel->GetEquivalenceModel()->GetFissileMolarFraction(IV_fissil, IV_fertil, BurnUp);
+    map< string, IsotopicVector> mymap;
+    mymap["Fissile"] = IV_fissil;
+    mymap["Fertile"] = IV_fertil;
+    
+    val= myPhysicsModel->GetEquivalenceModel()->GetMolarFraction(mymap, BurnUp)["Fissile"];
     cyDBGL
 
     return val; //
@@ -282,21 +238,21 @@ namespace cyclass {
     cyclus::Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, fissil_list);
     cyclus::Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, fertil_list);
 
-
+    //Print(fissil_list);
 
     cyDBGL
     if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-10 ){
 
       std::stringstream msg;
-      msg << "You fuel has nuclei that this model could not manage.."<< std::endl;
-      msg << "Missing " << std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel));
-      msg << " Nuclei" << std::endl;
+     cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
+      cout << "Missing " << std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel));
+      cout << " Nuclei" << std::endl;
       
       CompMap fuel_map = fuel->atom();
       CompMap::iterator it;
       for (it = fuel_map.begin(); it != fuel_map.end(); it++)
-        msg << it->first << " " << it->second << std::endl;
-
+        cout << it->first << " " << it->second << std::endl;
+      cout << "Fertile: "  << AtomIn(fuel_fertil) << " Fissile: "<< AtomIn(fuel_fissil) << " Total: " <<  AtomIn(fuel) << endl;
       exit(1);
     }
 
@@ -337,11 +293,18 @@ namespace cyclass {
   cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(cyclus::Composition::Ptr InitialCompo, double power, double mass, double burnup){
 
     IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
-    cSecond finaltime = burnup*mass /(power*1e-3) *3600*24;
+    double ratio = 1/InitialIV.GetTotalMass()*mass*1e-3;
+    InitialIV *= ratio;
 
-    EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power*1e3);
+    cSecond finaltime = burnup*mass*1e-3 /(power*1e-3) *3600*24;
+    //cout << "time " << finaltime << endl;
+    //cout << "power " << power << endl;
+    EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power*1e6);
     IsotopicVector AfterIrradiationIV = myEvolution.GetIsotopicVectorAt(finaltime);
 
+    //:InitialIV.Print();
+    //AfterIrradiationIV.Print();
+    AfterIrradiationIV *= 1/ratio;
     return Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
 
   }
@@ -446,7 +409,7 @@ namespace cyclass {
   //________________________________________________________________________
   void Print(CompMap compo){
     CompMap::iterator it;
-
+    cout << "Printing Compo" << std::endl;
     for (it = compo.begin(); it != compo.end(); it++){
       std::cout << it->first << " " << it->second << std::endl;
     }

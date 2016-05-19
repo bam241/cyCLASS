@@ -347,14 +347,14 @@ cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10));
         if (std::abs(fillqty - fill.quantity()) < cyclus::eps()) {
           fillqty = std::min(fill.quantity(), qty);
         }
-        responses.push_back(std::make_pair(trades[i], fill.Pop(fillqty)));
+        responses.push_back(std::make_pair(trades[i], fill.Pop(fillqty,cyclus::eps())));
       } else if (fill.count() == 0 ) {
         // use straight fissile to satisfy this request
         double fissqty = qty;
         if (std::abs(fissqty - fiss.quantity()) < cyclus::eps()) {
           fissqty = std::min(fiss.quantity(), qty);
         }
-        responses.push_back(std::make_pair(trades[i], fiss.Pop(fissqty)));
+        responses.push_back(std::make_pair(trades[i], fiss.Pop(fissqty,cyclus::eps())));
       }  else {
 
         Composition::Ptr c_fiss = fiss.Peek()->comp();
@@ -380,10 +380,10 @@ cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10));
           fillqty = std::min(fill.quantity(), fill_frac*qty);
         }
 
-        Material::Ptr m = fiss.Pop(fissqty);
+        Material::Ptr m = fiss.Pop(fissqty,cyclus::eps());
         // this if block prevents zero qty ResBuf pop exceptions
         if (fill_frac > 0) {
-          m->Absorb(fill.Pop(fillqty));
+          m->Absorb(fill.Pop(fillqty,cyclus::eps()));
         }
         responses.push_back(std::make_pair(trades[i], m));
       }
