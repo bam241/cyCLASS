@@ -235,11 +235,11 @@ namespace cyclass {
     float BU_min = 10;
     cyDBGL
 
+    
+    fuel = Composition::CreateFromAtom(NormalizeComp(fuel->atom(),1));
+
     cyclus::Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, fissil_list);
     cyclus::Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, fertil_list);
-
-    //Print(fissil_list);
-
     cyDBGL
     if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-10 ){
 
@@ -281,11 +281,11 @@ namespace cyclass {
 
       rho_estimated = GetEnrichment(fuel_fissil, fuel_fertil, BU_estimation);
 
-
     }while( std::abs(rho_target - rho_estimated)/(rho_target/2.+rho_estimated/2.) > eps );
 
     cyDBGL
-    return BU_estimation;
+    
+      return BU_estimation;
 
 
   }
