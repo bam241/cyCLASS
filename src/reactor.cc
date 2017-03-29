@@ -219,15 +219,14 @@ namespace cyclass {
         fissil_comp =  NormalizeComp(fissil_comp);
 
         CompMap fertil_comp;
-        fertil_comp.insert(std::pair<Nuc, double>(922350000,0.25));
-        fertil_comp.insert(std::pair<Nuc, double>(922380000,99.75));
+        fertil_comp.insert(std::pair<Nuc, double>(922380000,100));
         fertil_comp =  cyclass::NormalizeComp(fertil_comp);
 
         Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
         Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
         double Enrch = MyCLASSAdaptator->GetEnrichment(fissil_stream, fertil_stream, burnup );
-
+        std::cout << "Enrich required: " << Enrch << std::endl;
         Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
         m = Material::CreateUntracked(assem_size, fuel);

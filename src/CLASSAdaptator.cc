@@ -222,7 +222,6 @@ namespace cyclass {
     
     val= myPhysicsModel->GetEquivalenceModel()->GetMolarFraction(mymap, BurnUp)["Fissile"];
     cyDBGL
-
     return val; //
   }
 

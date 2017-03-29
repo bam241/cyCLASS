@@ -30,10 +30,6 @@ namespace cyclass {
       Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, c_fiss_);
       Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, c_fill_);
 
-      if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-10 ){
-        std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
-        exit(1);
-      }
       double enrichment = AtomIn(fuel_fissil)/AtomIn(fuel);
       return AtomToMassFrac(enrichment, c_fiss_, c_fill_) * m->quantity();
     }
@@ -59,10 +55,6 @@ namespace cyclass {
       Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, c_fiss_);
       Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, c_fill_);
 
-      if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) >1e-10 ){
-        std::cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
-        exit(1);
-      }
       double enrichment = AtomIn(fuel_fissil)/AtomIn(fuel);
       return AtomToMassFrac(1 - enrichment, c_fill_, c_fiss_) * m->quantity();
     }
@@ -292,17 +284,15 @@ namespace cyclass {
       cyDBGL
     }
 
-    //cyclus::Converter<Material>::Ptr fissconv( new FissConverter(c_fill, c_fiss) );
-    //cyclus::Converter<Material>::Ptr fillconv( new FillConverter(c_fill, c_fiss) );
+    cyclus::Converter<Material>::Ptr fissconv( new FissConverter(c_fill, c_fiss) );
+    cyclus::Converter<Material>::Ptr fillconv( new FillConverter(c_fill, c_fiss) );
     // important! - the std::max calls prevent CapacityConstraint throwing a zero
     // cap exception
     //cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10),fissconv);
     //cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),fillconv);
-cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10));
-    cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10));
+    cyclus::CapacityConstraint<Material> max(std::max(fiss.quantity(), 1e-10) + std::max(fill.quantity(), 1e-10));
 
-    port->AddConstraint(fillc);
-    port->AddConstraint(fissc);
+    port->AddConstraint(max);
 
     cyclus::CapacityConstraint<Material> cc(throughput);
     port->AddConstraint(cc);
