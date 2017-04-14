@@ -1,22 +1,21 @@
 #include "CLASSAdaptator.h"
 
-#include "EvolutionData.hxx"
 #include "EquivalenceModel.hxx"
-#include "XSModel.hxx"
-#include "IrradiationModel.hxx"
 #include "EvolutionData.hxx"
+#include "EvolutionData.hxx"
+#include "IrradiationModel.hxx"
+#include "XSModel.hxx"
 
 #include "Irradiation/IM_Matrix.hxx"
 #include "Irradiation/IM_RK4.hxx"
 
 #include "XS/XSM_MLP.hxx"
 
-
 #include "Equivalence/EQM_FBR_BakerRoss_MOX.hxx"
-#include "Equivalence/EQM_PWR_MLP_MOX_Am.hxx"
 #include "Equivalence/EQM_FBR_MLP_Keff.hxx"
 #include "Equivalence/EQM_MLP_Kinf.hxx"
 #include "Equivalence/EQM_PWR_MLP_MOX.hxx"
+#include "Equivalence/EQM_PWR_MLP_MOX_Am.hxx"
 #include "Equivalence/EQM_PWR_POL_UO2.hxx"
 
 #include <string>
@@ -25,8 +24,8 @@ using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
 
-
-//#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
+//#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " ["
+//<< __FUNCTION__ << "]" << std::endl;
 #define cyDBGL ;
 
 
@@ -197,8 +196,10 @@ namespace cyclass {
     if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
       IV_fissil += ZAI(95,241,0)*1;
 
+    cyDBGL
 
     fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
+    cyDBGL
 
     fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fertile")));
     cyDBGL
@@ -214,11 +215,14 @@ namespace cyclass {
     double val = 0;
 
     IsotopicVector IV_fissil = CYCLUS2CLASS(c_fissil);
+    cyDBGL
     IsotopicVector IV_fertil = CYCLUS2CLASS(c_fertil);
+    cyDBGL
 
     map< string, IsotopicVector> mymap;
     mymap["Fissile"] = IV_fissil;
     mymap["Fertile"] = IV_fertil;
+    cyDBGL
     
     val= myPhysicsModel->GetEquivalenceModel()->GetMolarFraction(mymap, BurnUp)["Fissile"];
     cyDBGL
@@ -243,7 +247,7 @@ namespace cyclass {
     if( std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel)) > 1e-10 ){
 
       std::stringstream msg;
-     cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
+      cout << "You fuel has nuclei that this model could not manage.."<< std::endl;
       cout << "Missing " << std::abs(AtomIn(fuel_fertil) + AtomIn(fuel_fissil) - AtomIn(fuel));
       cout << " Nuclei" << std::endl;
       

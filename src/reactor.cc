@@ -226,7 +226,7 @@ namespace cyclass {
         Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
 
         double Enrch = MyCLASSAdaptator->GetEnrichment(fissil_stream, fertil_stream, burnup );
-        std::cout << "Enrich required: " << Enrch << std::endl;
+        //std::cout << "Enrich required: " << Enrch << std::endl;
         Composition::Ptr fuel = Composition::CreateFromAtom( fertil_comp*( 1-Enrch ) + fissil_comp*Enrch );
 
         m = Material::CreateUntracked(assem_size, fuel);
