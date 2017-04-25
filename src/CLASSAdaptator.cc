@@ -24,8 +24,7 @@ using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
 
-//#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " ["
-//<< __FUNCTION__ << "]" << std::endl;
+//#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
 #define cyDBGL ;
 
 
@@ -219,6 +218,10 @@ namespace cyclass {
     IsotopicVector IV_fertil = CYCLUS2CLASS(c_fertil);
     cyDBGL
 
+    //std::cout << " fissil " << std::endl;
+    //IV_fissil.Print();
+    //std::cout << " fertil " << std::endl;
+    //IV_fertil.Print();
     map< string, IsotopicVector> mymap;
     mymap["Fissile"] = IV_fissil;
     mymap["Fertile"] = IV_fertil;
@@ -240,7 +243,8 @@ namespace cyclass {
 
     
     fuel = Composition::CreateFromAtom(NormalizeComp(fuel->atom(),1));
-
+    
+      
     cyclus::Composition::Ptr fuel_fissil = ExtractAccordinglist( fuel, fissil_list);
     cyclus::Composition::Ptr fuel_fertil = ExtractAccordinglist( fuel, fertil_list);
     cyDBGL

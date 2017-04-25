@@ -297,8 +297,8 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   // cap exception
   cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(),1e-10),fissconv);
   cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(),1e-10),fillconv);
-  cyclus::CapacityConstraint<Material> max(std::max(fiss.quantity(), 1e-10) +
-                                           std::max(fill.quantity(), 1e-10));
+  cyclus::CapacityConstraint<Material> max(
+      std::max(std::min(fiss.quantity(), fill.quantity()), 1e-10));
 
   port->AddConstraint(fissc);
   port->AddConstraint(fillc);
