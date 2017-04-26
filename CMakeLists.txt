@@ -22,6 +22,7 @@ ELSE()
   MESSAGE(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11
   support. Please use a different C++ compiler.")
 ENDIF()
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 # quiets fortify_source warnings when not compiling with optimizations
 # in linux distros where compilers were compiled with fortify_source enabled by
 # default (e.g. Arch linux).
@@ -115,7 +116,8 @@ set(LIBS ${LIBS} ${COIN_LIBRARIES})
 
 
 # Find ROOT
-FIND_PACKAGE(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net tmva)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH} ./cmake")
+FIND_PACKAGE(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net TMVA)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${ROOT_INCLUDE_DIRS})
 ADD_DEFINITIONS(${ROOT_CXX_FLAGS})
 SET(CYCLASS_INCLUDE_DIRS ${ROOT_INCLUDE_DIRS} )
