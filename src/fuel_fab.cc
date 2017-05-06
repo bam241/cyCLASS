@@ -219,6 +219,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   cyDBGL;
  using cyclus::BidPortfolio;
 
+    std::cout << " in fuelfab Bid" << std::endl;
   std::set<BidPortfolio<Material>::Ptr> ports;
   std::vector<cyclus::Request<Material>*>& reqs = commod_requests[outcommod];
 
@@ -308,6 +309,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   port->AddConstraint(cc);
   ports.insert(port);
   cyDBGL;
+    std::cout << " Out fuelfab Bid" << std::endl;
  return ports;
 }
 
