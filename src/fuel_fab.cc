@@ -219,7 +219,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   cyDBGL;
  using cyclus::BidPortfolio;
 
-    std::cout << " in fuelfab Bid" << std::endl;
+    //std::cout << " in fuelfab Bid" << std::endl;
   std::set<BidPortfolio<Material>::Ptr> ports;
   std::vector<cyclus::Request<Material>*>& reqs = commod_requests[outcommod];
 
@@ -260,13 +260,18 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
         Composition::Ptr tgt = req->target()->comp();
     cyDBGL;
  double tgt_qty = req->target()->quantity();
-    cyDBGL;
- double BU_tgt = MyCLASSAdaptator->GetBU(tgt);
+ double BU_tgt;
+ cyDBGL;
+#pragma omp critical(getBU)
+    {BU_tgt = MyCLASSAdaptator->GetBU(tgt);}
 
     cyDBGL;
- double fiss_frac =
+    double fiss_frac;
+#pragma omp critical(getenrichment)
+    { fiss_frac =
         MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
-    cyDBGL;
+    }
+      cyDBGL;
 
 
         double fill_frac = 1 - fiss_frac;
@@ -309,7 +314,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   port->AddConstraint(cc);
   ports.insert(port);
   cyDBGL;
-    std::cout << " Out fuelfab Bid" << std::endl;
+    //std::cout << " Out fuelfab Bid" << std::endl;
  return ports;
 }
 

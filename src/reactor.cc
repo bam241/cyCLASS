@@ -96,7 +96,7 @@ namespace cyclass {
 
   //________________________________________________________________________
   void Reactor::Tick() {
-    std::cout << " In reactor tick" << std::endl;
+    //std::cout << " In reactor tick" << std::endl;
     cyDBGL
     // The following code must go in the Tick so they fire on the time step
     // following the cycle_step update - allowing for the all reactor events to
@@ -169,7 +169,7 @@ namespace cyclass {
     }
 
     cyDBGL
-    std::cout << " Out reactor tick" << std::endl;
+    //std::cout << " Out reactor tick" << std::endl;
   }
 
   //________________________________________________________________________
@@ -348,7 +348,7 @@ namespace cyclass {
 
   //________________________________________________________________________
   void Reactor::Tock() {
-    std::cout << " in reactor Tock" << std::endl;
+    //std::cout << " in reactor Tock" << std::endl;
     if (retired()) {
       return;
     }
@@ -374,7 +374,7 @@ namespace cyclass {
     if (cycle_step > 0 || core.count() == n_assem_core) {
       cycle_step++;
     }
-    std::cout << " in reactor Tock" << std::endl;
+    //std::cout << " in reactor Tock" << std::endl;
   }
 
   //________________________________________________________________________
