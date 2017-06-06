@@ -38,7 +38,7 @@ FIND_PATH(CLASS_INCLUDE_DIR CLASSHeaders.hxx
 SET(CLASS_ROOT_DIR "${CLASS_INCLUDE_DIR}/../..")
 
 # Look for the library
-FIND_LIBRARY(CLASS_LIBRARY libCLASSpkg.so
+FIND_LIBRARY(CLASS_LIBRARY libCLASSpkg.a
     HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/lib" "$ENV{CLASS_PATH}/lib"
     "$ENV{CLASS_lib}"
     /usr/local/CLASS/lib /usr/local/CLASS
