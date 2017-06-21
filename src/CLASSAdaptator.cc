@@ -189,11 +189,16 @@ namespace cyclass {
     cyDBGL
      TMVAWeightFile = EQcommand;
     myPhysicsModel = new PhysicsModels();
-
+    cyDBGL
+    
     myPhysicsModel->SetEquivlalenceModel(   EQmodelfor(EQModel, EQcommand) );
+    cyDBGL
     myPhysicsModel->SetXSModel(             XSmodelfor(XSModel, XScommand) );
+    cyDBGL
     myPhysicsModel->SetIrradiationModel(    IMmodelfor(IMModel, IMcommand) );
+    cyDBGL
 
+    cyDBGL
     IsotopicVector IV_fissil = myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fissile");
     if(IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
       IV_fissil += ZAI(95,241,0)*1;
@@ -220,18 +225,6 @@ namespace cyclass {
     cyDBGL
     IsotopicVector IV_fertil = CYCLUS2CLASS(c_fertil);
     cyDBGL
-    
-    if( TMVAWeightFile == "/Users/mouginot/work/MODEL/MODEL_TRU/pwr/EQM/weights/REP_MOX_TRU_34.2262Wg.xml,/Users/mouginot/work/MODEL/MODEL_TRU/pwr/EQM/weights/REP_MOX_TRU_34.2262Wg.nfo,4,1.034" && IV_fissil.GetZAIIsotopicQuantity(92,237,0) > 0) {
-      std::cout << std::endl << std::endl << "TMVAWeightFile "<< TMVAWeightFile << std::endl;
-      std::cout << "CLASS fissil " << std::endl;
-      IV_fissil.Print();
-      std::cout << "Cyclus fissil " << std::endl;
-      Print(c_fissil);
-      std::cout << std::endl << std::endl << std::endl;
-      exit(1);
-    }
-    //std::cout << " fertil " << std::endl;
-    //IV_fertil.Print();
     map< string, IsotopicVector> mymap;
     mymap["Fissile"] = IV_fissil;
     mymap["Fertile"] = IV_fertil;
