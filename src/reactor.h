@@ -255,6 +255,12 @@ namespace cyclass {
 }
       std::string xs_command;
 
+#pragma cyclus var { \
+"default": "mox", \
+"doc": "fuel type Parameter line",	\
+"uilabel": "Parameter to define the fuel type", \
+}
+      std::string fuel_type;
 
 
 #pragma cyclus var { \
