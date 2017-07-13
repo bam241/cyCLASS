@@ -310,10 +310,14 @@ namespace cyclass {
     //cout << "time " << finaltime << endl;
     //cout << "power " << power << endl;
     EvolutionData myEvolution = myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power*1e6);
-    IsotopicVector AfterIrradiationIV = myEvolution.GetIsotopicVectorAt(finaltime);
-
+    IsotopicVector AfterIrradiationIV = myEvolution.GetIsotopicVectorAt(finaltime).GetActinidesComposition();
+    double CLASS_mass_ratio = AfterIrradiationIV.GetTotalMass()/InitialIV.GetActinidesComposition().GetTotalMass();
+    double missing_mass = -(AfterIrradiationIV.GetTotalMass()-InitialIV.GetActinidesComposition().GetTotalMass());
     //:InitialIV.Print();
     //AfterIrradiationIV.Print();
+    double Avogadro = 6.02214129e23;
+    AfterIrradiationIV += missing_mass * Avogadro / 136.9070 * ZAI(55,137,0)*1e6;
+  
     AfterIrradiationIV *= 1/ratio;
     return Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
 
