@@ -15,7 +15,7 @@ typedef std::map<Nuc, double> CompMap;
 //#define cyDBGL		std::cout << __FILE__ << " : " << __LINE__ << "
 //["
 //<< __FUNCTION__ << "]" << std::endl;
-#define cyDBGL ;
+#define;
 
 namespace cyclass {
 
@@ -79,6 +79,17 @@ void Reactor::InitFrom(cyclus::QueryableBackend* b) {
 void Reactor::EnterNotify() {
   cyclus::Facility::EnterNotify();
 
+  MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
+                                        xs_command, ir_model, ir_command);
+  // initialisation internal variable
+  for (int i = 0; i < n_batches; i++) {
+    std::string batch_name = "batch_" + std::to_string(i);
+    fresh[batch_name].capacity(n_batch_fresh);
+    core[batch_name].capacity(batch_size);
+    spent[batch_name].capacity(n_batch_spent);
+    cycle_step.push_back((n_batches - i) * cycle_time);
+  }
+
   // If the user ommitted fuel_prefs, we set it to zeros for each fuel
   // type.  Without this segfaults could occur - yuck.
   if (fuel_prefs.size() == 0) {
@@ -87,67 +98,82 @@ void Reactor::EnterNotify() {
     }
   }
 }
-
 //________________________________________________________________________
 bool Reactor::CheckDecommissionCondition() {
-  return core.count() == 0 && spent.count() == 0;
+  return core[batch_name].quantity() == 0 && spent[batch_name].quantity() == 0;
+}
+
+bool Reactor::InCycle(i){
+  std::string batch_name = "batch_" + std::to_string(i);
+
+  return cycle_step[i] >= 0 && cycle_step[i] < cycle_time* n_batch_core &&
+         core[batch_name].quantity() == batch_size;
 }
 
 //________________________________________________________________________
 void Reactor::Tick() {
-  cyDBGL
-      // The following code must go in the Tick so they fire on the time step
-      // following the cycle_step update - allowing for the all reactor events
-      // to
-      // occur and be recorded on the "beginning" of a time step.  Another
-      // reason
-      // they
-      // can't go at the beginnin of the Tock is so that resource exchange has a
-      // chance to occur after the discharge on this same time step.
+  // The following code must go in the Tick so they fire on the time step
+  // following the cycle_step update - allowing for the all reactor events
+  // to
+  // occur and be recorded on the "beginning" of a time step.  Another
+  // reason
+  // they
+  // can't go at the beginnin of the Tock is so that resource exchange has a
+  // chance to occur after the discharge on this same time step.
+  using cyclus::toolkit::RecordTimeSeries<cyclus::toolkit::POWER>;
 
-      if (retired()) {
+  if (retired()) {
     Record("RETIRED", "");
 
     // record the last time series entry if the reactor was operating at the
     // time of retirement.
     if (exit_time() == context()->time()) {
       if (cycle_step > 0 && cycle_step <= cycle_time &&
-          core.count() == n_assem_core) {
-        cyclus::toolkit::RecordTimeSeries<cyclus::toolkit::POWER>(this,
-                                                                  power_cap);
+          core[batch_name].quantity() == n_assem_core) {
+        RecordTimeSeries<cyclus::toolkit::POWER>(this, power_cap);
       } else {
-        cyclus::toolkit::RecordTimeSeries<cyclus::toolkit::POWER>(this, 0);
+        RecordTimeSeries<cyclus::toolkit::POWER>(this, 0);
       }
     }
 
     if (context()->time() == exit_time()) {  // only need to transmute once
-      Transmute(ceil(static_cast<double>(n_assem_core) / 2.0));
+      for (int i = 0; i < n_batch_core; i++) {
+        Transmute(i);
+      }
     }
-    while (core.count() > 0) {
-      if (!Discharge()) {
-        break;
+    for (int i = 0; i < n_batch_core; i++) {
+      std::string batch_name = "batch_" + std::to_string(i);
+      while (core[batch_name].quantity() > 0) {
+        if (!Discharge()) {
+          break;
+        }
       }
     }
     // in case a cycle lands exactly on our last time step, we will need to
     // burn a batch from fresh inventory on this time step.  When retired,
     // this batch also needs to be discharged to spent fuel inventory.
-    while (fresh.count() > 0 && spent.space() >= assem_size) {
-      spent.Push(fresh.Pop());
+    for (int i = 0; i < n_batch_core; i++) {
+      std::string batch_name = "batch_" + std::to_string(i);
+      while (fresh[batch_name].quantity() > 0 &&
+             spent[batch_name].space() >= batch_size) {
+        spent[batch_name].Push(fresh[batch_name].Pop());
+      }
+      return;
     }
-    return;
   }
 
-  if (cycle_step == cycle_time) {
-    cyDBGL Transmute();
-    Record("CYCLE_END", "");
-    cyDBGL
-  }
+  for (int i = 0; i < n_batch_core; i++) {
+    if (cycle_step[i] == cycle_time * n_batch_core) {
+      Transmute(i);
+      Record("CYCLE_END", "");
+    }
 
-  if (cycle_step >= cycle_time && !discharged) {
-    discharged = Discharge();
-  }
-  if (cycle_step >= cycle_time) {
-    Load();
+    if (cycle_step[i] >= cycle_time * n_batch_core && !discharged[i]) {
+      discharged[i] = Discharge(i);
+    }
+    if (cycle_step[i] >= cycle_time * n_batch_core) {
+      Load(i);
+    }
   }
 
   int t = context()->time();
@@ -167,26 +193,19 @@ void Reactor::Tick() {
       }
     }
   }
-
-  cyDBGL
 }
 
 //________________________________________________________________________
 std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
   using cyclus::RequestPortfolio;
-  cyDBGL
 
-      if (!MyCLASSAdaptator) {
-    MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
-                                          xs_command, ir_model, ir_command);
-  }
   std::set<RequestPortfolio<Material>::Ptr> ports;
   Material::Ptr m;
 
   // second min expression reduces assembles to amount needed until
   // retirement if it is near.
   int n_assem_order =
-      n_assem_core - core.count() + n_assem_fresh - fresh.count();
+      n_assem_core - core[batch_name].quantity() + n_assem_fresh - fresh[batch_name].quantity();
 
   if (exit_time() != -1) {
     // the +1 accounts for the fact that the reactor is alive and gets to
@@ -197,7 +216,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
                            static_cast<double>(cycle_time + refuel_time);
     n_cycles_left = ceil(n_cycles_left);
     int n_need = std::max(0.0, n_cycles_left * n_assem_batch - n_assem_fresh +
-                                   n_assem_core - core.count());
+                                   n_assem_core - core[batch_name].quantity());
     n_assem_order = std::min(n_assem_order, n_need);
   }
 
@@ -246,7 +265,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
     ports.insert(port);
   }
 
-  cyDBGL return ports;
+  return ports;
 }
 
 //________________________________________________________________________
@@ -275,7 +294,7 @@ void Reactor::AcceptMatlTrades(
                         cyclus::Material::Ptr> >::const_iterator trade;
 
   std::stringstream ss;
-  int nload = std::min((int)responses.size(), n_assem_core - core.count());
+  int nload = std::min((int)responses.size(), n_assem_core - core[batch_name].quantity());
   if (nload > 0) {
     ss << nload << " assemblies";
     Record("LOAD", ss.str());
@@ -286,10 +305,10 @@ void Reactor::AcceptMatlTrades(
     Material::Ptr m = trade->second;
     index_res(m, commod);
 
-    if (core.count() < n_assem_core) {
-      core.Push(m);
+    if (core[batch_name].quantity() < n_assem_core) {
+      core[batch_name].Push(m);
     } else {
-      fresh.Push(m);
+      fresh[batch_name].Push(m);
     }
   }
 }
@@ -301,7 +320,6 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
 
   std::set<BidPortfolio<Material>::Ptr> ports;
 
-  bool gotmats = false;
   std::map<std::string, MatVec> all_mats;
 
   if (uniq_outcommods_.empty()) {
@@ -316,7 +334,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
     std::vector<Request<Material>*>& reqs = commod_requests[commod];
     if (reqs.size() == 0) {
       continue;
-    } else if (!gotmats) {
+    } else {
       all_mats = PeekSpent();
     }
 
@@ -354,86 +372,83 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
 
 //________________________________________________________________________
 void Reactor::Tock() {
+  using cyclus::toolkit::RecordTimeSeries<cyclus::toolkit::POWER>;
+
   if (retired()) {
     return;
   }
+  for (int i = 0; i < n_batches; i++) {
+    std::string batch_name = "batch_" + std::to_string(i);
 
-  if (cycle_step >= cycle_time + refuel_time && core.count() == n_assem_core) {
-    discharged = false;
-    cycle_step = 0;
-  }
+    if (cycle_step >= cycle_time *n_batch_core + refuel_time &&
+        core[batch_name].quantity() == batch_size) {
+      discharged = false;
+      cycle_step = 0;
+    }
 
-  if (cycle_step == 0 && core.count() == n_assem_core) {
-    Record("CYCLE_START", "");
-  }
+    if (cycle_step == 0 && core[batch_name].quantity() == n_batch_core) {
+      Record("CYCLE_START", "");
+    }
 
-  if (cycle_step >= 0 && cycle_step < cycle_time &&
-      core.count() == n_assem_core) {
-    cyclus::toolkit::RecordTimeSeries<cyclus::toolkit::POWER>(this, power_cap);
-  } else {
-    cyclus::toolkit::RecordTimeSeries<cyclus::toolkit::POWER>(this, 0);
-  }
+    if (InCycle(i)) {
+      RecordTimeSeries<cyclus::toolkit::POWER>(this, power_cap);
+    } else {
+      RecordTimeSeries<cyclus::toolkit::POWER>(this, 0);
+    }
 
-  // "if" prevents starting cycle after initial deployment until core is full
-  // even though cycle_step is its initial zero.
-  if (cycle_step > 0 || core.count() == n_assem_core) {
-    cycle_step++;
+    // "if" prevents starting cycle after initial deployment until core is full
+    // even though cycle_step is its initial zero.
+    if (cycle_step[i] > 0 || core[batch_name].quantity() == batch_size) {
+      cycle_step[i]++;
+    }
   }
 }
 
-//________________________________________________________________________
-void Reactor::Transmute() { Transmute(n_assem_batch); }
 
 //________________________________________________________________________
-void Reactor::Transmute(int n_assem) {
-  cyDBGL MatVec old = core.PopN(std::min(n_assem, core.count()));
-  core.Push(old);
-  cyDBGL
+void Reactor::Transmute(int n_batch) {
+  std::string batch_name = "batch_" + std::to_string(i);
+  MatVec old = core[batch_name].Pop(std::min(core[batch_name].quantity()));
+  core[batch_name].Push(old);
 
-      if (!MyCLASSAdaptator) {
-    cyDBGL MyCLASSAdaptator = new CLASSAdaptator(
-        eq_model, eq_command, xs_model, xs_command, ir_model, ir_command);
-    cyDBGL
+  if (!MyCLASSAdaptator) {
+    MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
+                                          xs_command, ir_model, ir_command);
   }
 
-  cyDBGL
 
-      if (core.count() > old.size()) {
-    // rotate untransmuted mats back to back of buffer
-    core.Push(core.PopN(core.count() - old.size()));
-  }
-  cyDBGL
-
-      std::stringstream ss;
-  ss << old.size() << " assemblies";
+  std::stringstream ss;
+  ss << old.quantity() << " kg from batch " << n_batch;
   Record("TRANSMUTE", ss.str());
 
-  cyDBGL for (int i = 0; i < old.size(); i++) {
+  for (int i = 0; i < old.size(); i++) {V
     double mass = old[i]->quantity();
-    cyDBGL cyclus::Composition::Ptr compo = old[i]->comp();
-    cyDBGL old[i]->Transmute(
+    double bu = power*cycle_step[n_batch]/batch_size;
+    cyclus::Composition::Ptr compo = old[i]->comp();
+    old[i]->Transmute(
         MyCLASSAdaptator->GetCompAfterIrradiation(compo, power, mass, burnup));
-    cyDBGL
   }
-  cyDBGL
 }
 
 //________________________________________________________________________
 std::map<std::string, MatVec> Reactor::PeekSpent() {
   std::map<std::string, MatVec> mapped;
-  MatVec mats = spent.PopN(spent.count());
-  spent.Push(mats);
-  for (int i = 0; i < mats.size(); i++) {
-    std::string commod = fuel_outcommod(mats[i]);
-    mapped[commod].push_back(mats[i]);
+  for (int j = 0; j < n_batch_core; j++){
+    std::string batch_name = "batch_" + std::to_string(j);
+    MatVec mats = spent[batch_name].Pop(spent[batch_name].quantity());
+    spent[batch_name].Push(mats);
+    for (int i = 0; i < mats.size(); i++) {
+      std::string commod = fuel_outcommod(mats[i]);
+      mapped[commod].push_back(mats[i]);
+    }
   }
   return mapped;
 }
 
 //________________________________________________________________________
 bool Reactor::Discharge() {
-  int npop = std::min(n_assem_batch, core.count());
-  if (n_assem_spent - spent.count() < npop) {
+  int npop = std::min(n_assem_batch, core[batch_name].quantity());
+  if (n_assem_spent - spent[batch_name].quantity() < npop) {
     Record("DISCHARGE", "failed");
     return false;  // not enough room in spent buffer
   }
@@ -442,13 +457,13 @@ bool Reactor::Discharge() {
   ss << npop << " assemblies";
   Record("DISCHARGE", ss.str());
 
-  spent.Push(core.PopN(npop));
+  spent[batch_name].Push(core[batch_name].Pop(npop));
   return true;
 }
 
 //________________________________________________________________________
 void Reactor::Load() {
-  int n = std::min(n_assem_core - core.count(), fresh.count());
+  int n = std::min(n_assem_core - core[batch_name].quantity(), fresh[batch_name].quantity());
   if (n == 0) {
     return;
   }
@@ -456,7 +471,7 @@ void Reactor::Load() {
   std::stringstream ss;
   ss << n << " assemblies";
   Record("LOAD", ss.str());
-  core.Push(fresh.PopN(n));
+  core[batch_name].Push(fresh[batch_name].Pop(n));
 }
 
 //________________________________________________________________________
@@ -499,12 +514,12 @@ void Reactor::index_res(cyclus::Resource::Ptr m, std::string incommod) {
 
 //________________________________________________________________________
 std::map<std::string, MatVec> Reactor::PopSpent() {
-  MatVec mats = spent.PopN(spent.count());
-  std::map<std::string, MatVec> mapped;
-  for (int i = 0; i < mats.size(); i++) {
-    std::string commod = fuel_outcommod(mats[i]);
-    mapped[commod].push_back(mats[i]);
-  }
+    MatVec mats = spent[batch_name].Pop(spent[batch_name].quantity());
+    std::map<std::string, MatVec> mapped;
+    for (int i = 0; i < mats.size(); i++) {
+      std::string commod = fuel_outcommod(mats[i]);
+      mapped[commod].push_back(mats[i]);
+    }
 
   // needed so we trade away oldest assemblies first
   std::map<std::string, MatVec>::iterator it;
@@ -520,7 +535,7 @@ void Reactor::PushSpent(std::map<std::string, MatVec> leftover) {
   for (it = leftover.begin(); it != leftover.end(); ++it) {
     // undo reverse in PopSpent to make sure oldest assemblies come out first
     std::reverse(it->second.begin(), it->second.end());
-    spent.Push(it->second);
+    spent[batch_name].Push(it->second);
   }
 }
 
