@@ -5,6 +5,8 @@
 #include "cyclus.h"
 
 namespace cyclass {
+using cyclus::toolkit::MatVec;
+using cyclus::toolkit::ResBuf;
 
 class Reactor : public cyclus::Facility,
                 public cyclus::toolkit::CommodityProducer {
@@ -17,7 +19,6 @@ class Reactor : public cyclus::Facility,
   virtual void Tick();
   virtual void Tock();
   virtual void EnterNotify();
-  virtual bool CheckDecommissionCondition();
 
   virtual void AcceptMatlTrades(
       const std::vector<std::pair<cyclus::Trade<cyclus::Material>,
@@ -40,6 +41,7 @@ class Reactor : public cyclus::Facility,
   std::string fuel_incommod(cyclus::Material::Ptr m);
   std::string fuel_outcommod(cyclus::Material::Ptr m);
   double fuel_pref(cyclus::Material::Ptr m);
+  bool InCycle(int i);
 
   CLASSAdaptator* MyCLASSAdaptator;
 
@@ -52,14 +54,10 @@ class Reactor : public cyclus::Facility,
 
   /// Discharge a batch from the core if there is room in the spent fuel
   /// inventory.  Returns true if a batch was successfully discharged.
-  bool Discharge();
+  bool Discharge(int i);
 
   /// Top up core inventory as much as possible.
-  void Load();
-
-  /// Transmute the batch that is about to be discharged from the core to its
-  /// fully burnt state as defined by its outrecipe.
-  void Transmute();
+  void Load(int i);
 
   /// Transmute the specified number of assemblies in the core to their
   /// fully burnt state as defined by their outrecipe.
@@ -70,15 +68,15 @@ class Reactor : public cyclus::Facility,
 
   /// Complement of PopSpent - must be called with all materials passed that
   /// were not traded away to other agents.
-  void PushSpent(std::map<std::string, cyclus::toolkit::MatVec> leftover);
+  void PushSpent(std::map<std::string, MatVec> leftover);
 
   /// Returns all spent assemblies indexed by outcommod - removing them from
   /// the spent fuel buffer.
-  std::map<std::string, cyclus::toolkit::MatVec> PopSpent();
+  std::map<std::string, MatVec> PopSpent();
 
   /// Returns all spent assemblies indexed by outcommod without removing them
   /// from the spent fuel buffer.
-  std::map<std::string, cyclus::toolkit::MatVec> PeekSpent();
+  std::map<std::string, MatVec> PeekSpent();
 
 /////// fuel specifications /////////
   #pragma cyclus var {                                                     \
@@ -126,10 +124,10 @@ class Reactor : public cyclus::Facility,
     "default": 1000000000, \
     "uilabel": "Maximum Spent Fuel Inventory", \
     "units": "kg", \
-    "doc": "Mass of spent fuel for each batch that can be stored on-site before" \
+    "doc": "Mass of spent fuel that can be stored on-site before" \
     " reactor operation stalls.", \
   }
-  double n_batch_spent;
+  double m_batch_spent;
 
 ///////// Model params ///////////
 
@@ -246,16 +244,14 @@ class Reactor : public cyclus::Facility,
 
   // Resource inventories - these must be defined AFTER/BELOW the member vars
   // referenced (e.g. n_batch_fresh, assem_size, etc.).
-  map<std::string, cyclus::toolkit::ResBuf<cyclus::Material>> fresh_buf;
-  map<std::string, cyclus::toolkit::ResBuf<cyclus::Material>> core_buf;
-  map<std::string, cyclus::toolkit::ResBuf<cyclus::Material>> spent_buf;
+  map<std::string, ResBuf<cyclus::Material>> fresh;
+  map<std::string, ResBuf<cyclus::Material>> core;
+  #pragma cyclus var {"capacity": "m_batch_spent"}
+  ResBuf<cyclus::Material> spent;
 
 // should be hidden in ui (internal only). True if fuel has already been
 // discharged this cycle.
-  #pragma cyclus var {                                          \
-    "default" : 0, "doc" : "This should NEVER be set manually", \
-    "internal" : True }
-  bool discharged;
+  vector<bool> discharged;
 
 // This variable should be hidden/unavailable in ui.  Maps resource object
 // id's to the index for the incommod through which they were received.
