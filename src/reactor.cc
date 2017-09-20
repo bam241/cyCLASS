@@ -81,7 +81,7 @@ void Reactor::EnterNotify() {
   // initialisation internal variable
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
-    fresh[batch_name].capacity(n_batch_fresh);
+    fresh[batch_name].capacity(n_batch_fresh*batch_size);
     core[batch_name].capacity(batch_size);
     cycle_step.push_back((n_batch_core - i) * cycle_time);
     discharged.push_back(true);
@@ -208,24 +208,25 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
     std::string batch_name = "batch_" + std::to_string(u);
 
     double mass_in_core_n = core[batch_name].quantity();
-    double mass_fresh_n = core[batch_name].quantity();
+    double mass_fresh_n = fresh[batch_name].quantity();
 
     double mass_to_order =
-        n_batch_core * batch_size - mass_in_core_n - mass_fresh_n;
+        batch_size - mass_in_core_n + n_batch_fresh * batch_size - mass_fresh_n;
 
     // reduce the amount required if the reactor is about to be decommisionned
     if (exit_time() != -1) {
       // the +1 accounts for the fact that the reactor is alive and gets to
       // operate during its exit_time time step.
       int t_left = exit_time() - context()->time() + 1;
-      int t_left_cycle = cycle_time * n_batch_core + refuel_time - cycle_step[u];
+      int t_left_cycle =
+          cycle_time * n_batch_core + refuel_time - cycle_step[u];
 
       double n_cycles_left =
           static_cast<double>(t_left - t_left_cycle) /
           static_cast<double>(cycle_time * n_batch_core + refuel_time);
       n_cycles_left = ceil(n_cycles_left);
       double mass_need =
-          std::max(0.0, n_cycles_left*batch_size - mass_fresh_n);
+          std::max(0.0, n_cycles_left * batch_size - mass_fresh_n);
       mass_to_order = std::min(mass_to_order, mass_need);
     }
 
@@ -275,7 +276,6 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
   return ports;
 }
 
-
 //________________________________________________________________________
 void Reactor::GetMatlTrades(
     const std::vector<cyclus::Trade<Material> >& trades,
@@ -318,7 +318,6 @@ void Reactor::AcceptMatlTrades(
     ss << mload << " kg";
     Record("LOAD", ss.str());
   }
-
   for (trade = responses.begin(); trade != responses.end(); ++trade) {
     std::string batch_name = req_inventories_[trade->first.request];
     std::string commod = trade->first.request->commodity();
