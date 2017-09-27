@@ -190,7 +190,7 @@ void Reactor::Tick() {
   }
 
   if(FullCore()){
-    
+
     if (cycle_step % cycle_time == 0 && !Refueling()){
         int batch = cycle_step / cycle_time -1;
         Transmute(batch);
@@ -199,7 +199,7 @@ void Reactor::Tick() {
         Record("CYCLE_END", ss.str());
     }
   }
-  
+
 
   if (cycle_step % cycle_time == 0 && !Discharged()){
       int batch = cycle_step / cycle_time -1;
@@ -212,7 +212,7 @@ void Reactor::Tick() {
         refueling_step = 0;
       }
   }
-  
+
 
   int t = context()->time();
 
@@ -238,28 +238,84 @@ void Reactor::Tick() {
 std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
   using cyclus::RequestPortfolio;
 
-
   std::set<RequestPortfolio<Material>::Ptr> ports;
+  if (retired()) {
+    return ports;
+  }
+
   Material::Ptr m;
 
   // second min expression reduces assembles to amount needed until
   // retirement if it is near.
   for (int u = 0; u < n_batch_core; u++) {
+    // Deal first with the Core
     std::string batch_name = "batch_" + std::to_string(u);
-
     double mass_in_core_n = core[batch_name].quantity();
+    double mass_to_order = batch_size - mass_in_core_n;
+
+    if (mass_to_order != 0) {
+      RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
+      std::vector<Request<Material>*> mreqs;
+
+      for (int j = 0; j < fuel_incommods.size(); j++) {
+        std::string commod = fuel_incommods[j];
+        double pref = fuel_prefs[j];
+
+        // Defining the Stream composition
+
+        CompMap fissil_comp;
+        if (fuel_type == "mox") {
+          fissil_comp.insert(std::pair<Nuc, double>(942390000, 100));
+        } else if (fuel_type == "uox") {
+          fissil_comp.insert(std::pair<Nuc, double>(922350000, 100));
+        }
+        fissil_comp = NormalizeComp(fissil_comp);
+        CompMap fertil_comp;
+        fertil_comp.insert(std::pair<Nuc, double>(922380000, 100));
+        fertil_comp = cyclass::NormalizeComp(fertil_comp);
+
+        Composition::Ptr fissil_stream =
+            Composition::CreateFromAtom(fissil_comp);
+        Composition::Ptr fertil_stream =
+            Composition::CreateFromAtom(fertil_comp);
+        double required_burnup = burnup;
+        if (context()->time() - enter_time() < cycle_time && !InCycle() &&
+            u != 0) {
+          required_burnup = burnup / n_batch_core * u;
+        }
+        double enrich = MyCLASSAdaptator->GetEnrichment(
+            fissil_stream, fertil_stream, required_burnup);
+        CompMap fuel_comp = fertil_comp * (1 - enrich) + fissil_comp * enrich;
+        Composition::Ptr fuel = Composition::CreateFromAtom(fuel_comp);
+
+        m = Material::CreateUntracked(mass_to_order, fuel);
+
+        Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
+        req_inventories_[r] = batch_name;
+        mreqs.push_back(r);
+      }
+      port->AddMutualReqs(mreqs);
+      ports.insert(port);
+    }
+
     double mass_fresh_n = fresh[batch_name].quantity();
 
-    double mass_to_order =
-        batch_size - mass_in_core_n + n_batch_fresh * batch_size - mass_fresh_n;
+    mass_to_order = n_batch_fresh * batch_size - mass_fresh_n;
 
     // reduce the amount required if the reactor is about to be decommisionned
     if (exit_time() != -1) {
       // the +1 accounts for the fact that the reactor is alive and gets to
       // operate during its exit_time time step.
       int t_left = exit_time() - context()->time() + 1;
+      int irradiation_time = cycle_step;
+      if (context()->time() - enter_time() > n_batch_core * cycle_time) {
+        irradiation_time += u * cycle_time;
+        if (irradiation_time > n_batch_core * cycle_time) {
+          irradiation_time -= n_batch_core * cycle_time;
+        }
+      }
       int t_left_cycle =
-          cycle_time * n_batch_core + refuel_time - cycle_step;
+          cycle_time * n_batch_core + refuel_time - irradiation_time;
 
       double n_cycles_left =
           static_cast<double>(t_left - t_left_cycle) /
@@ -270,48 +326,46 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       mass_to_order = std::min(mass_to_order, mass_need);
     }
 
-    if (mass_to_order == 0) {
-      return ports;
-    } else if (retired()) {
-      return ports;
-    }
+    if (mass_to_order != 0) {
+      RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
+      std::vector<Request<Material>*> mreqs;
 
-    RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
-    std::vector<Request<Material>*> mreqs;
+      for (int j = 0; j < fuel_incommods.size(); j++) {
+        std::string commod = fuel_incommods[j];
+        double pref = fuel_prefs[j];
 
-    for (int j = 0; j < fuel_incommods.size(); j++) {
-      std::string commod = fuel_incommods[j];
-      double pref = fuel_prefs[j];
+        // Defining the Stream composition
 
-      // Defining the Stream composition
+        CompMap fissil_comp;
+        if (fuel_type == "mox") {
+          fissil_comp.insert(std::pair<Nuc, double>(942390000, 100));
+        } else if (fuel_type == "uox") {
+          fissil_comp.insert(std::pair<Nuc, double>(922350000, 100));
+        }
+        fissil_comp = NormalizeComp(fissil_comp);
+        CompMap fertil_comp;
+        fertil_comp.insert(std::pair<Nuc, double>(922380000, 100));
+        fertil_comp = cyclass::NormalizeComp(fertil_comp);
 
-      CompMap fissil_comp;
-      if (fuel_type == "mox") {
-        fissil_comp.insert(std::pair<Nuc, double>(942390000, 100));
-      } else if (fuel_type == "uox") {
-        fissil_comp.insert(std::pair<Nuc, double>(922350000, 100));
+        Composition::Ptr fissil_stream =
+            Composition::CreateFromAtom(fissil_comp);
+        Composition::Ptr fertil_stream =
+            Composition::CreateFromAtom(fertil_comp);
+
+        double enrich = MyCLASSAdaptator->GetEnrichment(fissil_stream,
+                                                        fertil_stream, burnup);
+        CompMap fuel_comp = fertil_comp * (1 - enrich) + fissil_comp * enrich;
+        Composition::Ptr fuel = Composition::CreateFromAtom(fuel_comp);
+
+        m = Material::CreateUntracked(mass_to_order, fuel);
+
+        Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
+        req_inventories_[r] = batch_name;
+        mreqs.push_back(r);
       }
-      fissil_comp = NormalizeComp(fissil_comp);
-      CompMap fertil_comp;
-      fertil_comp.insert(std::pair<Nuc, double>(922380000, 100));
-      fertil_comp = cyclass::NormalizeComp(fertil_comp);
-
-      Composition::Ptr fissil_stream = Composition::CreateFromAtom(fissil_comp);
-      Composition::Ptr fertil_stream = Composition::CreateFromAtom(fertil_comp);
-
-      double enrich =
-          MyCLASSAdaptator->GetEnrichment(fissil_stream, fertil_stream, burnup);
-      CompMap fuel_comp = fertil_comp * (1 - enrich) + fissil_comp * enrich;
-      Composition::Ptr fuel = Composition::CreateFromAtom(fuel_comp);
-
-      m = Material::CreateUntracked(mass_to_order, fuel);
-
-      Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
-      req_inventories_[r] = batch_name;
-      mreqs.push_back(r);
+      port->AddMutualReqs(mreqs);
+      ports.insert(port);
     }
-    port->AddMutualReqs(mreqs);
-    ports.insert(port);
   }
   return ports;
 }
@@ -332,7 +386,7 @@ void Reactor::GetMatlTrades(
     res_indexes.erase(m->obj_id());
   }
   PushSpent(mats);  // return leftovers back to spent buffer
-  
+
 }
 
 
