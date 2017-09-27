@@ -24,6 +24,7 @@ Reactor::Reactor(cyclus::Context* ctx)
       cycle_time(0),
       refuel_time(0),
       cycle_step(0),
+      refueling_step(-1),
       power_cap(0),
       power_name("power"),
       xs_model("xs"),
@@ -83,7 +84,6 @@ void Reactor::EnterNotify() {
     std::string batch_name = "batch_" + std::to_string(i);
     fresh[batch_name].capacity(n_batch_fresh*batch_size);
     core[batch_name].capacity(batch_size);
-    cycle_step.push_back((n_batch_core - i) * cycle_time);
     discharged.push_back(true);
   }
 
@@ -96,11 +96,44 @@ void Reactor::EnterNotify() {
   }
 }
 
-bool Reactor::InCycle(int i){
-  std::string batch_name = "batch_" + std::to_string(i);
 
-  return cycle_step[i] >= 0 && cycle_step[i] < cycle_time* n_batch_core &&
-         core[batch_name].quantity() == batch_size;
+//________________________________________________________________________
+bool Reactor::FullCore(){
+  bool full_core = true;
+  for (int i = 0; i < n_batch_core; i++) {
+    std::string batch_name = "batch_" + std::to_string(i);
+    if (core[batch_name].quantity() < batch_size){
+      full_core = false;
+    }
+  }
+
+  return full_core;
+}
+
+//________________________________________________________________________
+bool Reactor::Discharged(){
+  for (int i = 0; i < n_batch_core; i++){
+    if (!discharged[i]){
+      return false;
+    }
+  }
+  return true;
+}
+
+//________________________________________________________________________
+bool Reactor::Refueling(){
+  if (refueling_step == -1){
+    return false;
+  } else {
+    return true;
+  }
+}
+//________________________________________________________________________
+bool Reactor::InCycle(){
+  if (Refueling() || !Discharged()) {
+    return false;
+  }
+  return cycle_step >= 0 && FullCore();
 }
 
 
@@ -123,11 +156,7 @@ void Reactor::Tick() {
     // record the last time series entry if the reactor was operating at the
     // time of retirement.
     if (exit_time() == context()->time()) {
-      bool incycle = true;
-      for (int i = 0; i < n_batch_core; i++){
-        incycle = incycle && InCycle(i);
-      }
-      if (incycle) {
+      if (FullCore() && cycle_step > 0 && cycle_step <= cycle_time * n_batch_core ) {
         RecordTimeSeries<POWER>(this, power_cap);
       } else {
         RecordTimeSeries<POWER>(this, 0);
@@ -160,19 +189,30 @@ void Reactor::Tick() {
     }
   }
 
-  for (int i = 0; i < n_batch_core; i++) {
-    if (cycle_step[i] == cycle_time * n_batch_core) {
-      Transmute(i);
-      Record("CYCLE_END", "");
-    }
-
-    if (cycle_step[i] >= cycle_time * n_batch_core && !discharged[i]) {
-      discharged[i] = Discharge(i);
-    }
-    if (cycle_step[i] >= cycle_time * n_batch_core) {
-      Load(i);
+  if(FullCore()){
+    
+    if (cycle_step % cycle_time == 0 && !Refueling()){
+        int batch = cycle_step / cycle_time -1;
+        Transmute(batch);
+        std::stringstream ss;
+        ss << "batch " << batch;
+        Record("CYCLE_END", ss.str());
     }
   }
+  
+
+  if (cycle_step % cycle_time == 0 && !Discharged()){
+      int batch = cycle_step / cycle_time -1;
+      discharged[batch] = Discharge(batch);
+    }
+  if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()){
+      int batch = cycle_step / cycle_time -1;
+      Load(batch);
+      if (FullCore()){
+        refueling_step = 0;
+      }
+  }
+  
 
   int t = context()->time();
 
@@ -219,7 +259,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       // operate during its exit_time time step.
       int t_left = exit_time() - context()->time() + 1;
       int t_left_cycle =
-          cycle_time * n_batch_core + refuel_time - cycle_step[u];
+          cycle_time * n_batch_core + refuel_time - cycle_step;
 
       double n_cycles_left =
           static_cast<double>(t_left - t_left_cycle) /
@@ -315,7 +355,7 @@ void Reactor::AcceptMatlTrades(
   }
   double mload = std::min( m_responses, n_batch_core *batch_size - mass_in_core);
   if (mload > 0) {
-    ss << mload << " kg";
+    ss << mload << " kg ";
     Record("LOAD", ss.str());
   }
   for (trade = responses.begin(); trade != responses.end(); ++trade) {
@@ -401,33 +441,39 @@ void Reactor::Tock() {
   if (retired()) {
     return;
   }
-  for (int i = 0; i < n_batch_core; i++) {
-    std::string batch_name = "batch_" + std::to_string(i);
 
-    if (cycle_step[i] >= cycle_time *n_batch_core + refuel_time &&
-        core[batch_name].quantity() == batch_size) {
-      discharged[i] = false;
-      cycle_step[i] = 0;
+  if (FullCore()) {
+    if (refueling_step >= refuel_time) {
+      for (int i = 0; i < n_batch_core; i++) {
+        discharged[i] = false;
+      }
+      refuel_time = -1;
     }
 
-    if (cycle_step[i] == 0 && core[batch_name].quantity() == n_batch_core) {
-      Record("CYCLE_START", "");
+    if (!Refueling() && cycle_step % cycle_time == 0) {
+      int batch = cycle_step / cycle_time - 1;
+      std::stringstream ss;
+      ss << "new cycle for batch " << batch;
+      Record("CYCLE_START", ss.str());
+
+      // if last batch reset cycle_step
+      if ( batch == n_batch_core - 1) {
+        cycle_step = 0;
+      }
     }
 
-    if (InCycle(i)) {
+    if (InCycle()) {
       RecordTimeSeries<POWER>(this, power_cap);
+      cycle_step++;
     } else {
       RecordTimeSeries<POWER>(this, 0);
     }
 
-    // "if" prevents starting cycle after initial deployment until core is full
-    // even though cycle_step is its initial zero.
-    if (cycle_step[i] > 0 || core[batch_name].quantity() == batch_size) {
-      cycle_step[i]++;
+    if (Refueling()) {
+      refueling_step++;
     }
   }
 }
-
 
 //________________________________________________________________________
 void Reactor::Transmute(int n_batch) {
@@ -451,7 +497,7 @@ void Reactor::Transmute(int n_batch) {
 
   for (int i = 0; i < old.size(); i++) {
     double mass = old[i]->quantity();
-    double bu = power*cycle_step[n_batch]/batch_size;
+    double bu = power*cycle_step/batch_size;
     cyclus::Composition::Ptr compo = old[i]->comp();
     old[i]->Transmute(
         MyCLASSAdaptator->GetCompAfterIrradiation(compo, power, mass, burnup));
@@ -493,15 +539,14 @@ bool Reactor::Discharge(int i) {
 //________________________________________________________________________
 void Reactor::Load(int i) {
   std::string batch_name = "batch_" + std::to_string(i);
-  double n = std::min(n_batch_core * batch_size - core[batch_name].quantity(), fresh[batch_name].quantity());
-  if (n == 0) {
-    return;
+  double n = std::min(batch_size - core[batch_name].quantity(),
+                      fresh[batch_name].quantity());
+  if (n != 0) {
+    std::stringstream ss;
+    ss << n << " batches";
+    Record("LOAD", ss.str());
+    core[batch_name].Push(fresh[batch_name].Pop(n));
   }
-
-  std::stringstream ss;
-  ss << n << " batches";
-  Record("LOAD", ss.str());
-  core[batch_name].Push(fresh[batch_name].Pop(n));
 }
 
 

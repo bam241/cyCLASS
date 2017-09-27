@@ -41,7 +41,10 @@ class Reactor : public cyclus::Facility,
   std::string fuel_incommod(cyclus::Material::Ptr m);
   std::string fuel_outcommod(cyclus::Material::Ptr m);
   double fuel_pref(cyclus::Material::Ptr m);
-  bool InCycle(int i);
+  bool FullCore();
+  bool Discharged();
+  bool Refueling();
+  bool InCycle();
 
   CLASSAdaptator* MyCLASSAdaptator;
 
@@ -186,7 +189,8 @@ class Reactor : public cyclus::Facility,
   }
   int refuel_time;
 
-  vector<int> cycle_step;
+  int cycle_step;
+  int refueling_step;
 
 //////////// power params ////////////
   #pragma cyclus var { \
