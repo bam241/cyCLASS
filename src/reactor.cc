@@ -153,7 +153,7 @@ void Reactor::Tick() {
   if (retired()) {
     Record("RETIRED", "");
 
-    // record the last time series entry if the reactor was operating at the
+    // record the last time series enter if the reactor was operating at the
     // time of retirement.
     if (exit_time() == context()->time()) {
       if (FullCore() && cycle_step > 0 && cycle_step <= cycle_time * n_batch_core ) {
@@ -477,7 +477,6 @@ void Reactor::Tock() {
 
 //________________________________________________________________________
 void Reactor::Transmute(int n_batch) {
-  
   std::string batch_name = "batch_" + std::to_string(n_batch);
   MatVec old = core[batch_name].PopN(core[batch_name].count());
   core[batch_name].Push(old);
@@ -495,15 +494,24 @@ void Reactor::Transmute(int n_batch) {
   ss << old_mass << " kg from batch " << n_batch;
   Record("TRANSMUTE", ss.str());
 
+  // Get time inside the reactor
+  // Get last batch number:
+  int irradiation_time = cycle_step;
+  if (context()->time() - enter_time() > n_batch_core * cycle_time) {
+    irradiation_time += n_batch * cycle_time;
+    if (irradiation_time > n_batch_core * cycle_time) {
+      irradiation_time -= n_batch_core * cycle_time;
+    }
+  }
+
   for (int i = 0; i < old.size(); i++) {
     double mass = old[i]->quantity();
-    double bu = power*cycle_step/batch_size;
+    double bu = power * irradiation_time / batch_size;
     cyclus::Composition::Ptr compo = old[i]->comp();
     old[i]->Transmute(
         MyCLASSAdaptator->GetCompAfterIrradiation(compo, power, mass, burnup));
   }
 }
-
 
 //________________________________________________________________________
 std::map<std::string, MatVec> Reactor::PeekSpent() {
