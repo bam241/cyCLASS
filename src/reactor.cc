@@ -190,10 +190,10 @@ void Reactor::Tick() {
   }
 
   if(FullCore()){
-
-    if (cycle_step % cycle_time == 0 && !Refueling()){
+    if ( cycle_step !=0 && cycle_step % cycle_time == 0 && !Refueling()){
         int batch = cycle_step / cycle_time -1;
         Transmute(batch);
+        discharged[batch] = false;
         std::stringstream ss;
         ss << "batch " << batch;
         Record("CYCLE_END", ss.str());
@@ -201,7 +201,7 @@ void Reactor::Tick() {
   }
 
 
-  if (cycle_step % cycle_time == 0 && !Discharged()){
+  if (cycle_step !=0 && cycle_step % cycle_time == 0 && !Discharged() ){
       int batch = cycle_step / cycle_time -1;
       discharged[batch] = Discharge(batch);
     }
@@ -367,6 +367,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       ports.insert(port);
     }
   }
+
   return ports;
 }
 
@@ -421,6 +422,9 @@ void Reactor::AcceptMatlTrades(
 
     if (core[batch_name].quantity() < batch_size) {
       core[batch_name].Push(m);
+      if (core[batch_name].quantity() == batch_size){
+        refueling_step = 0;
+      }
     } else {
       fresh[batch_name].Push(m);
     }
@@ -498,10 +502,7 @@ void Reactor::Tock() {
 
   if (FullCore()) {
     if (refueling_step >= refuel_time) {
-      for (int i = 0; i < n_batch_core; i++) {
-        discharged[i] = false;
-      }
-      refuel_time = -1;
+      refueling_step = -1;
     }
 
     if (!Refueling() && cycle_step % cycle_time == 0) {
