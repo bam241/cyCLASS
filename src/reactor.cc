@@ -1,5 +1,7 @@
 #include "reactor.h"
+#include <random>
 #include <ostream>
+#include <cmath>
 
 using cyclus::Material;
 using cyclus::Composition;
@@ -76,6 +78,10 @@ void Reactor::InitFrom(cyclus::QueryableBackend* b) {
 //________________________________________________________________________
 void Reactor::EnterNotify() {
   cyclus::Facility::EnterNotify();
+
+  this_cycle_lenght = -1;
+  this_refueling_lenght = -1;
+
 
   MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
                                         xs_command, ir_model, ir_command);
@@ -210,6 +216,7 @@ void Reactor::Tick() {
       Load(batch);
       if (FullCore()){
         refueling_step = 0;
+        this_refueling_lenght = get_corrected_param(refuel_time, refuel_time_uncertainty);
       }
   }
 
@@ -424,6 +431,7 @@ void Reactor::AcceptMatlTrades(
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size){
         refueling_step = 0;
+        this_refueling_lenght = get_corrected_param(refuel_time, refuel_time_uncertainty);
       }
     } else {
       fresh[batch_name].Push(m);
@@ -501,12 +509,13 @@ void Reactor::Tock() {
   }
 
   if (FullCore()) {
-    if (refueling_step >= refuel_time) {
+    if (refueling_step >= this_refueling_lenght) {
       refueling_step = -1;
+      this_cycle_lenght = get_corrected_param(cycle_time, cycle_time_uncertainty);
     }
 
-    if (!Refueling() && cycle_step % cycle_time == 0) {
-      int batch = cycle_step / cycle_time - 1;
+    if (!Refueling() && cycle_step % this_cycle_lenght == 0) {
+      int batch = cycle_step / this_cycle_lenght - 1;
       std::stringstream ss;
       ss << "new cycle for batch " << batch;
       Record("CYCLE_START", ss.str());
@@ -695,6 +704,18 @@ void Reactor::Record(std::string name, std::string val) {
       ->AddVal("Event", name)
       ->AddVal("Value", val)
       ->Record();
+}
+
+int Reactor::get_corrected_param(double param, double param_uncertainty) {
+  if (param_uncertainty == 0) {
+    return param;
+  } else {
+      std::default_random_engine de(std::clock());
+      std::normal_distribution<double> nd(param, param_uncertainty);
+
+      double val = std::round(nd(de));
+      return (int)val;
+  }
 }
 
 extern "C" cyclus::Agent* ConstructReactor(cyclus::Context* ctx) {

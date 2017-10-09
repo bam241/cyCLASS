@@ -45,6 +45,7 @@ class Reactor : public cyclus::Facility,
   bool Discharged();
   bool Refueling();
   bool InCycle();
+  int get_corrected_param(double param, double uncertainty); 
 
   CLASSAdaptator* MyCLASSAdaptator;
 
@@ -178,6 +179,13 @@ class Reactor : public cyclus::Facility,
     "units": "time steps", \
   }
   int cycle_time;
+  #pragma cyclus var { \
+    "doc": "Uncertainty on the duration of a full operational cycle (excluding refueling " \
+    "time) in time steps.", \
+    "uilabel": "Cycle Length Uncertainty", \
+    "units": "time steps", \
+  }
+  int cycle_time_uncertainty;
 
   #pragma cyclus var { \
     "doc": "The duration of a full refueling period - the minimum time between"\
@@ -187,8 +195,18 @@ class Reactor : public cyclus::Facility,
   }
   int refuel_time;
 
+  #pragma cyclus var { \
+    "doc": "Uncertainty on the duration of a full refueling period - the minimum time between"\
+    " the end of a cycle and the start of the next cycle.", \
+    "uilabel": "Refueling Outage Duration", \
+    "units": "time steps", \
+  }
+  int refuel_time_uncertainty;
+
   int cycle_step;
   int refueling_step;
+  int this_cycle_lenght;
+  int this_refueling_lenght;
 
 //////////// power params ////////////
   #pragma cyclus var { \
@@ -198,6 +216,14 @@ class Reactor : public cyclus::Facility,
     "units": "MWe", \
   }
   double power;
+
+  #pragma cyclus var { \
+    "doc": "Uncertainty on the amount of thermal power the facility produces when operating " \
+    "normally.", \
+    "uilabel": "Thermal Reactor Power Uncertainty", \
+    "units": "MWe", \
+  }
+  double power_uncertainty;
 
   #pragma cyclus var { \
     "default": 0, \
