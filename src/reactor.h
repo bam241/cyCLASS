@@ -1,8 +1,8 @@
-#ifndef CYCLASS_SRC_REACTOR_H_
-#define CYCLASS_SRC_REACTOR_H_
+  #ifndef CYCLASS_SRC_REACTOR_H_
+  #define CYCLASS_SRC_REACTOR_H_
 
-#include "CLASSAdaptator.h"
-#include "cyclus.h"
+  #include "CLASSAdaptator.h"
+  #include "cyclus.h"
 
 namespace cyclass {
 using cyclus::toolkit::MatVec;
@@ -83,9 +83,9 @@ class Reactor : public cyclus::Facility,
 
 /////// fuel specifications /////////
   #pragma cyclus var {                                                     \
-    "uitype" :                                                             \
-    ["oneormore", "incommodity"], "uilabel" : "Fresh Fuel Commodity List", \
-     "doc" : "Ordered list of input commodities on which to requesting fuel.", }
+  "uitype" :                                                             \
+  ["oneormore", "incommodity"], "uilabel" : "Fresh Fuel Commodity List", \
+   "doc" : "Ordered list of input commodities on which to requesting fuel.", }
   std::vector<std::string> fuel_incommods;
 
   #pragma cyclus var { \
@@ -106,20 +106,18 @@ class Reactor : public cyclus::Facility,
   }
   std::vector<std::string> fuel_outcommods;
 
-  #pragma cyclus var {                                                      \
+  #pragma cyclus var {                                                  \
     "doc" : "Mass (kg) of a Batch assembly.", "uilabel" : "Batch Mass", \
     "units" : "kg", }
   double batch_size;
 
-  #pragma cyclus var {                     \
-    "uilabel" : "Number of batches in Core", \
-    "units" : "batches",                                    \
+  #pragma cyclus var {                                            \
+    "uilabel" : "Number of batches in Core", "units" : "batches", \
     "doc" : "Number of batches that constitute a full core.", }
   int n_batch_core;
 
-  #pragma cyclus var {                                         \
-    "default" : 0, "uilabel" : "Minimum Fresh Fuel Inventory", \
-    "units" : "kg",                                    \
+  #pragma cyclus var {                                                         \
+    "default" : 0, "uilabel" : "Minimum Fresh Fuel Inventory", "units" : "kg", \
     "doc" : "Mass of fresh fuel for each batch to keep on-hand if possible.", }
   double n_batch_fresh;
 
@@ -136,7 +134,7 @@ class Reactor : public cyclus::Facility,
 
   #pragma cyclus var { \
     "doc" : "Cross Secction Model name.", "uilabel" : "Name of the XS Model", }
-    std::string xs_model;
+  std::string xs_model;
 
   #pragma cyclus var {                      \
     "doc" : "Cross Section Parameter line", \
@@ -250,18 +248,18 @@ class Reactor : public cyclus::Facility,
   // referenced (e.g. n_batch_fresh, assem_size, etc.).
   map<std::string, ResBuf<cyclus::Material>> fresh;
   map<std::string, ResBuf<cyclus::Material>> core;
-  #pragma cyclus var {"capacity": "m_batch_spent"}
+  #pragma cyclus var { "capacity" : "m_batch_spent" }
   ResBuf<cyclus::Material> spent;
 
-// should be hidden in ui (internal only). True if fuel has already been
-// discharged this cycle.
+  // should be hidden in ui (internal only). True if fuel has already been
+  // discharged this cycle.
   vector<bool> discharged;
 
 // This variable should be hidden/unavailable in ui.  Maps resource object
 // id's to the index for the incommod through which they were received.
   #pragma cyclus var {                                           \
     "default" : {}, "doc" : "This should NEVER be set manually", \
-               "internal" : True }
+    "internal" : True }
   std::map<int, int> res_indexes;
 
   // intra-time-step state - no need to be a state var
@@ -270,8 +268,8 @@ class Reactor : public cyclus::Facility,
 
   // populated lazily and no need to persist.
   std::set<std::string> uniq_outcommods_;
-  };
+};
 
-  }  // namespace cyclass
+}  // namespace cyclass
 
-#endif  // CYCLASS_SRC_REACTOR_H_
+  #endif  // CYCLASS_SRC_REACTOR_H_
