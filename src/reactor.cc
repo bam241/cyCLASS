@@ -1,5 +1,7 @@
-#include "reactor.h"
+#include <cmath>
 #include <ostream>
+#include <random>
+#include "reactor.h"
 
 using cyclus::Material;
 using cyclus::Composition;
@@ -41,14 +43,11 @@ Reactor::Reactor(cyclus::Context* ctx)
   MyCLASSAdaptator = 0;
 }
 
-
-
 //________________________________________________________________________
 void Reactor::InitFrom(Reactor* m) {
 #pragma cyclus impl initfromcopy cyclass::Reactor
   cyclus::toolkit::CommodityProducer::Copy(m);
 }
-
 
 //________________________________________________________________________
 void Reactor::InitFrom(cyclus::QueryableBackend* b) {
@@ -85,11 +84,11 @@ void Reactor::InitInv(cyclus::Inventories& inv) {
   for (it = inv.begin(); it != inv.end(); ++it) {
     std::map<std::string, ResBuf<Material> >::iterator it2;
     it2 = fresh.find(it->first);
-    if (it2 != fresh.end()){
+    if (it2 != fresh.end()) {
       fresh[it->first].Push(it->second);
     }
     it2 = core.find(it->first);
-    if (it2 != core.end()){
+    if (it2 != core.end()) {
       core[it->first].Push(it->second);
     }
   }
@@ -99,13 +98,16 @@ void Reactor::InitInv(cyclus::Inventories& inv) {
 void Reactor::EnterNotify() {
   cyclus::Facility::EnterNotify();
 
+  this_cycle_lenght = -1;
+  this_refueling_lenght = -1;
+
   MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
                                         xs_command, ir_model, ir_command);
   // initialisation internal variable
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
     std::string fresh_name = "fresh_" + std::to_string(i);
-    fresh[fresh_name].capacity(n_batch_fresh*batch_size);
+    fresh[fresh_name].capacity(n_batch_fresh * batch_size);
     core[batch_name].capacity(batch_size);
     discharged.push_back(true);
   }
@@ -119,13 +121,12 @@ void Reactor::EnterNotify() {
   }
 }
 
-
 //________________________________________________________________________
-bool Reactor::FullCore(){
+bool Reactor::FullCore() {
   bool full_core = true;
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
-    if (core[batch_name].quantity() < batch_size){
+    if (core[batch_name].quantity() < batch_size) {
       full_core = false;
     }
   }
@@ -134,9 +135,9 @@ bool Reactor::FullCore(){
 }
 
 //________________________________________________________________________
-bool Reactor::Discharged(){
-  for (int i = 0; i < n_batch_core; i++){
-    if (!discharged[i]){
+bool Reactor::Discharged() {
+  for (int i = 0; i < n_batch_core; i++) {
+    if (!discharged[i]) {
       return false;
     }
   }
@@ -144,21 +145,20 @@ bool Reactor::Discharged(){
 }
 
 //________________________________________________________________________
-bool Reactor::Refueling(){
-  if (refueling_step == -1){
+bool Reactor::Refueling() {
+  if (refueling_step == -1) {
     return false;
   } else {
     return true;
   }
 }
 //________________________________________________________________________
-bool Reactor::InCycle(){
+bool Reactor::InCycle() {
   if (Refueling() || !Discharged()) {
     return false;
   }
   return cycle_step >= 0 && FullCore();
 }
-
 
 //________________________________________________________________________
 void Reactor::Tick() {
@@ -179,7 +179,8 @@ void Reactor::Tick() {
     // record the last time series enter if the reactor was operating at the
     // time of retirement.
     if (exit_time() == context()->time()) {
-      if (FullCore() && cycle_step > 0 && cycle_step <= cycle_time * n_batch_core ) {
+      if (FullCore() && cycle_step > 0 &&
+          cycle_step <= cycle_time * n_batch_core) {
         RecordTimeSeries<POWER>(this, power_cap);
       } else {
         RecordTimeSeries<POWER>(this, 0);
@@ -203,7 +204,7 @@ void Reactor::Tick() {
     // burn a batch from fresh inventory on this time step.  When retired,
     // this batch also needs to be discharged to spent fuel inventory.
     for (int i = 0; i < n_batch_core; i++) {
-    std::string fresh_name = "fresh_" + std::to_string(i);
+      std::string fresh_name = "fresh_" + std::to_string(i);
       while (fresh[fresh_name].quantity() > 0 &&
              spent.space() >= m_batch_spent) {
         spent.Push(fresh[fresh_name].Pop());
@@ -212,33 +213,33 @@ void Reactor::Tick() {
     }
   }
 
-  if(FullCore()){
-    if ( cycle_step !=0 && cycle_step % cycle_time == 0 && !Refueling()){
-        int batch = cycle_step / cycle_time -1;
-        Transmute(batch);
-        discharged[batch] = false;
-        std::stringstream ss;
-        ss << "batch " << batch;
-        Record("CYCLE_END", ss.str());
+  if (FullCore()) {
+    if (cycle_step != 0 && cycle_step % cycle_time == 0 && !Refueling()) {
+      int batch = cycle_step / cycle_time - 1;
+      Transmute(batch);
+      discharged[batch] = false;
+      std::stringstream ss;
+      ss << "batch " << batch;
+      Record("CYCLE_END", ss.str());
     }
   }
 
-
-  if (cycle_step !=0 && cycle_step % cycle_time == 0 && !Discharged() ){
-      int batch = cycle_step / cycle_time -1;
-      discharged[batch] = Discharge(batch);
-    }
-  if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()){
-      int batch = cycle_step / cycle_time -1;
-      while( batch < 0 ){
-        batch += n_batch_core;
-      }
-      Load(batch);
-      if (FullCore()){
-        refueling_step = 0;
-      }
+  if (cycle_step != 0 && cycle_step % cycle_time == 0 && !Discharged()) {
+    int batch = cycle_step / cycle_time - 1;
+    discharged[batch] = Discharge(batch);
   }
-
+  if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()) {
+    int batch = cycle_step / cycle_time - 1;
+    while (batch < 0) {
+      batch += n_batch_core;
+    }
+    Load(batch);
+    if (FullCore()) {
+      refueling_step = 0;
+      this_refueling_lenght =
+          get_corrected_param(refuel_time, refuel_time_uncertainty);
+    }
+  }
 
   int t = context()->time();
 
@@ -258,7 +259,6 @@ void Reactor::Tick() {
     }
   }
 }
-
 
 //________________________________________________________________________
 std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
@@ -416,7 +416,6 @@ void Reactor::GetMatlTrades(
   PushSpent(mats);  // return leftovers back to spent buffer
 }
 
-
 //________________________________________________________________________
 void Reactor::AcceptMatlTrades(
     const std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
@@ -451,14 +450,13 @@ void Reactor::AcceptMatlTrades(
 
     Material::Ptr m = trade->second;
     index_res(m, commod);
-    if (!fresh_r) {
-      if (m->quantity() <= batch_size - core[batch_name].quantity()) {
-        core[batch_name].Push(m);
-        if (core[batch_name].quantity() == batch_size) {
-          refueling_step = 0;
-        }
-      } else {
-        fresh_r = true;
+
+    if (core[batch_name].quantity() < batch_size) {
+      core[batch_name].Push(m);
+      if (core[batch_name].quantity() == batch_size) {
+        refueling_step = 0;
+        this_refueling_lenght =
+            get_corrected_param(refuel_time, refuel_time_uncertainty);
       }
     }
     if (fresh_r) {
@@ -467,7 +465,6 @@ void Reactor::AcceptMatlTrades(
   }
   req_inventories_.clear();
 }
-
 
 //________________________________________________________________________
 std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
@@ -526,7 +523,6 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
   return ports;
 }
 
-
 //________________________________________________________________________
 void Reactor::Tock() {
   using cyclus::toolkit::RecordTimeSeries;
@@ -537,18 +533,20 @@ void Reactor::Tock() {
   }
 
   if (FullCore()) {
-    if (refueling_step >= refuel_time) {
+    if (refueling_step >= this_refueling_lenght) {
       refueling_step = -1;
+      this_cycle_lenght =
+          get_corrected_param(cycle_time, cycle_time_uncertainty);
     }
 
-    if (!Refueling() && cycle_step % cycle_time == 0) {
-      int batch = cycle_step / cycle_time - 1;
+    if (!Refueling() && cycle_step % this_cycle_lenght == 0) {
+      int batch = cycle_step / this_cycle_lenght - 1;
       std::stringstream ss;
       ss << "new cycle for batch " << batch;
       Record("CYCLE_START", ss.str());
 
       // if last batch reset cycle_step
-      if ( batch == n_batch_core - 1) {
+      if (batch == n_batch_core - 1) {
         cycle_step = 0;
       }
     }
@@ -607,15 +605,14 @@ void Reactor::Transmute(int n_batch) {
 //________________________________________________________________________
 std::map<std::string, MatVec> Reactor::PeekSpent() {
   std::map<std::string, MatVec> mapped;
-    MatVec mats = spent.PopN(spent.count());
-    spent.Push(mats);
-    for (int i = 0; i < mats.size(); i++) {
-      std::string commod = fuel_outcommod(mats[i]);
-      mapped[commod].push_back(mats[i]);
-    }
+  MatVec mats = spent.PopN(spent.count());
+  spent.Push(mats);
+  for (int i = 0; i < mats.size(); i++) {
+    std::string commod = fuel_outcommod(mats[i]);
+    mapped[commod].push_back(mats[i]);
+  }
   return mapped;
 }
-
 
 //________________________________________________________________________
 bool Reactor::Discharge(int i) {
@@ -634,7 +631,6 @@ bool Reactor::Discharge(int i) {
   return true;
 }
 
-
 //________________________________________________________________________
 void Reactor::Load(int i) {
   std::string batch_name = "batch_" + std::to_string(i);
@@ -649,7 +645,6 @@ void Reactor::Load(int i) {
   }
 }
 
-
 //________________________________________________________________________
 std::string Reactor::fuel_incommod(Material::Ptr m) {
   int i = res_indexes[m->obj_id()];
@@ -658,7 +653,6 @@ std::string Reactor::fuel_incommod(Material::Ptr m) {
   }
   return fuel_incommods[i];
 }
-
 
 //________________________________________________________________________
 std::string Reactor::fuel_outcommod(Material::Ptr m) {
@@ -669,7 +663,6 @@ std::string Reactor::fuel_outcommod(Material::Ptr m) {
   return fuel_outcommods[i];
 }
 
-
 //________________________________________________________________________
 double Reactor::fuel_pref(Material::Ptr m) {
   int i = res_indexes[m->obj_id()];
@@ -678,7 +671,6 @@ double Reactor::fuel_pref(Material::Ptr m) {
   }
   return fuel_prefs[i];
 }
-
 
 //________________________________________________________________________
 void Reactor::index_res(cyclus::Resource::Ptr m, std::string incommod) {
@@ -691,9 +683,8 @@ void Reactor::index_res(cyclus::Resource::Ptr m, std::string incommod) {
   throw ValueError("cyclass::Reactor - received unsupported incommod material");
 }
 
-
 //________________________________________________________________________
-std::map<std::string, MatVec > Reactor::PopSpent() {
+std::map<std::string, MatVec> Reactor::PopSpent() {
   std::map<std::string, MatVec> mapped;
 
   MatVec mats = spent.PopN(spent.count());
@@ -711,7 +702,6 @@ std::map<std::string, MatVec > Reactor::PopSpent() {
   return mapped;
 }
 
-
 //________________________________________________________________________
 void Reactor::PushSpent(std::map<std::string, MatVec> leftover) {
   std::map<std::string, MatVec>::iterator it;
@@ -722,7 +712,6 @@ void Reactor::PushSpent(std::map<std::string, MatVec> leftover) {
   }
 }
 
-
 //________________________________________________________________________
 void Reactor::Record(std::string name, std::string val) {
   context()
@@ -732,6 +721,18 @@ void Reactor::Record(std::string name, std::string val) {
       ->AddVal("Event", name)
       ->AddVal("Value", val)
       ->Record();
+}
+
+int Reactor::get_corrected_param(double param, double param_uncertainty) {
+  if (param_uncertainty == 0) {
+    return param;
+  } else {
+    std::default_random_engine de(std::clock());
+    std::normal_distribution<double> nd(param, param_uncertainty);
+
+    double val = std::round(nd(de));
+    return (int)val;
+  }
 }
 
 extern "C" cyclus::Agent* ConstructReactor(cyclus::Context* ctx) {
