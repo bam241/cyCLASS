@@ -79,8 +79,8 @@ void Reactor::InitFrom(cyclus::QueryableBackend* b) {
 void Reactor::EnterNotify() {
   cyclus::Facility::EnterNotify();
 
-  this_cycle_lenght = -1;
-  this_refueling_lenght = -1;
+  this_cycle_lenght = cycle_time;
+  this_refueling_lenght = refuel_time;
 
 
   MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
@@ -296,7 +296,6 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         Composition::Ptr fuel = Composition::CreateFromAtom(fuel_comp);
 
         m = Material::CreateUntracked(mass_to_order, fuel);
-
         Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
         req_inventories_[r] = batch_name;
         mreqs.push_back(r);
@@ -367,7 +366,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         m = Material::CreateUntracked(mass_to_order, fuel);
 
         Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
-        req_inventories_[r] = batch_name;
+        req_inventories_[r] = "f_" + batch_name;
         mreqs.push_back(r);
       }
       port->AddMutualReqs(mreqs);
@@ -423,11 +422,16 @@ void Reactor::AcceptMatlTrades(
   for (trade = responses.begin(); trade != responses.end(); ++trade) {
     std::string batch_name = req_inventories_[trade->first.request];
     std::string commod = trade->first.request->commodity();
+    bool fresh_r = false;
+    if (batch_name.at(0) == 'f' ){
+      fresh_r = true;
+      batch_name = batch_name.substr(1);
+    }
 
     Material::Ptr m = trade->second;
     index_res(m, commod);
 
-    if (core[batch_name].quantity() < batch_size) {
+    if (m->quantity() <= batch_size - core[batch_name].quantity() && !fresh_r) {
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size){
         refueling_step = 0;
@@ -503,7 +507,6 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> Reactor::GetMatlBids(
 void Reactor::Tock() {
   using cyclus::toolkit::RecordTimeSeries;
   using cyclus::toolkit::POWER;
-
   if (retired()) {
     return;
   }
@@ -511,7 +514,6 @@ void Reactor::Tock() {
   if (FullCore()) {
     if (refueling_step >= this_refueling_lenght) {
       refueling_step = -1;
-      this_cycle_lenght = get_corrected_param(cycle_time, cycle_time_uncertainty);
     }
 
     if (!Refueling() && cycle_step % this_cycle_lenght == 0) {
@@ -523,6 +525,7 @@ void Reactor::Tock() {
       // if last batch reset cycle_step
       if ( batch == n_batch_core - 1) {
         cycle_step = 0;
+        this_cycle_lenght = get_corrected_param(cycle_time, cycle_time_uncertainty);
       }
     }
 
