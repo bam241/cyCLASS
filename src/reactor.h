@@ -193,6 +193,7 @@ class Reactor : public cyclus::Facility,
     "time) in time steps.", \
     "uilabel": "Cycle Length Uncertainty", \
     "units": "time steps", \
+    "default": 0, \
   }
   int cycle_time_uncertainty;
 
@@ -209,6 +210,7 @@ class Reactor : public cyclus::Facility,
     " the end of a cycle and the start of the next cycle.", \
     "uilabel": "Refueling Outage Duration", \
     "units": "time steps", \
+    "default": 0, \
   }
   int refuel_time_uncertainty;
 
@@ -231,6 +233,7 @@ class Reactor : public cyclus::Facility,
     "normally.", \
     "uilabel": "Thermal Reactor Power Uncertainty", \
     "units": "MWe", \
+    "default": 0, \
   }
   double power_uncertainty;
 
