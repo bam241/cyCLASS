@@ -41,19 +41,6 @@ Reactor::Reactor(cyclus::Context* ctx)
   MyCLASSAdaptator = 0;
 }
 
-#pragma cyclus def clone cyclass::Reactor
-
-#pragma cyclus def schema cyclass::Reactor
-
-#pragma cyclus def annotations cyclass::Reactor
-
-#pragma cyclus def infiletodb cyclass::Reactor
-
-#pragma cyclus def snapshot cyclass::Reactor
-
-#pragma cyclus def snapshotinv cyclass::Reactor
-
-#pragma cyclus def initinv cyclass::Reactor
 
 
 //________________________________________________________________________
@@ -72,6 +59,41 @@ void Reactor::InitFrom(cyclus::QueryableBackend* b) {
                              tk::CommodInfo(power_cap, power_cap));
 }
 
+cyclus::Inventories Reactor::SnapshotInv() {
+  cyclus::Inventories invs;
+
+  // these inventory names are intentionally convoluted so as to not clash
+  // with the user-specified stream commods that are used as the separations
+  // streams inventory names.
+  invs["spent-inv-name"] = spent.PopNRes(spent.count());
+  spent.Push(invs["spent-inv-name"]);
+  std::map<std::string, ResBuf<Material> >::iterator it;
+  for (it = fresh.begin(); it != fresh.end(); ++it) {
+    invs[it->first] = it->second.PopNRes(it->second.count());
+    it->second.Push(invs[it->first]);
+  }
+  for (it = core.begin(); it != core.end(); ++it) {
+    invs[it->first] = it->second.PopNRes(it->second.count());
+    it->second.Push(invs[it->first]);
+  }
+  return invs;
+}
+void Reactor::InitInv(cyclus::Inventories& inv) {
+  spent.Push(inv["spent-inv-name"]);
+
+  cyclus::Inventories::iterator it;
+  for (it = inv.begin(); it != inv.end(); ++it) {
+    std::map<std::string, ResBuf<Material> >::iterator it2;
+    it2 = fresh.find(it->first);
+    if (it2 != fresh.end()){
+      fresh[it->first].Push(it->second);
+    }
+    it2 = core.find(it->first);
+    if (it2 != core.end()){
+      core[it->first].Push(it->second);
+    }
+  }
+}
 
 //________________________________________________________________________
 void Reactor::EnterNotify() {
@@ -82,7 +104,8 @@ void Reactor::EnterNotify() {
   // initialisation internal variable
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
-    fresh[batch_name].capacity(n_batch_fresh*batch_size);
+    std::string fresh_name = "fresh_" + std::to_string(i);
+    fresh[fresh_name].capacity(n_batch_fresh*batch_size);
     core[batch_name].capacity(batch_size);
     discharged.push_back(true);
   }
@@ -180,10 +203,10 @@ void Reactor::Tick() {
     // burn a batch from fresh inventory on this time step.  When retired,
     // this batch also needs to be discharged to spent fuel inventory.
     for (int i = 0; i < n_batch_core; i++) {
-      std::string batch_name = "batch_" + std::to_string(i);
-      while (fresh[batch_name].quantity() > 0 &&
+    std::string fresh_name = "fresh_" + std::to_string(i);
+      while (fresh[fresh_name].quantity() > 0 &&
              spent.space() >= m_batch_spent) {
-        spent.Push(fresh[batch_name].Pop());
+        spent.Push(fresh[fresh_name].Pop());
       }
       return;
     }
@@ -207,6 +230,9 @@ void Reactor::Tick() {
     }
   if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()){
       int batch = cycle_step / cycle_time -1;
+      while( batch < 0 ){
+        batch += n_batch_core;
+      }
       Load(batch);
       if (FullCore()){
         refueling_step = 0;
@@ -250,6 +276,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
   for (int u = 0; u < n_batch_core; u++) {
     // Deal first with the Core
     std::string batch_name = "batch_" + std::to_string(u);
+    std::string fresh_name = "fresh_" + std::to_string(u);
     double mass_in_core_n = core[batch_name].quantity();
     double mass_to_order = batch_size - mass_in_core_n;
 
@@ -298,7 +325,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       ports.insert(port);
     }
 
-    double mass_fresh_n = fresh[batch_name].quantity();
+    double mass_fresh_n = fresh[fresh_name].quantity();
 
     mass_to_order = n_batch_fresh * batch_size - mass_fresh_n;
 
@@ -360,7 +387,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         m = Material::CreateUntracked(mass_to_order, fuel);
 
         Request<Material>* r = port->AddRequest(m, this, commod, pref, true);
-        req_inventories_[r] = batch_name;
+        req_inventories_[r] = fresh_name;
         mreqs.push_back(r);
       }
       port->AddMutualReqs(mreqs);
@@ -387,7 +414,6 @@ void Reactor::GetMatlTrades(
     res_indexes.erase(m->obj_id());
   }
   PushSpent(mats);  // return leftovers back to spent buffer
-
 }
 
 
@@ -399,16 +425,17 @@ void Reactor::AcceptMatlTrades(
                         cyclus::Material::Ptr> >::const_iterator trade;
 
   std::stringstream ss;
-  double mass_in_core =0;
-  for (int i = 0; i < n_batch_core; i++){
+  double mass_in_core = 0;
+  for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
     mass_in_core += core[batch_name].quantity();
   }
   double m_responses = 0;
-  for (int i = 0; i < (int)responses.size(); i++){
+  for (int i = 0; i < (int)responses.size(); i++) {
     m_responses += responses[i].second->quantity();
   }
-  double mload = std::min( m_responses, n_batch_core *batch_size - mass_in_core);
+  double mload =
+      std::min(m_responses, n_batch_core * batch_size - mass_in_core);
   if (mload > 0) {
     ss << mload << " kg ";
     Record("LOAD", ss.str());
@@ -417,15 +444,24 @@ void Reactor::AcceptMatlTrades(
     std::string batch_name = req_inventories_[trade->first.request];
     std::string commod = trade->first.request->commodity();
 
+    bool fresh_r = false;
+    if (batch_name.at(0) == 'f') {
+      fresh_r = true;
+    }
+
     Material::Ptr m = trade->second;
     index_res(m, commod);
-
-    if (core[batch_name].quantity() < batch_size) {
-      core[batch_name].Push(m);
-      if (core[batch_name].quantity() == batch_size){
-        refueling_step = 0;
+    if (!fresh_r) {
+      if (m->quantity() <= batch_size - core[batch_name].quantity()) {
+        core[batch_name].Push(m);
+        if (core[batch_name].quantity() == batch_size) {
+          refueling_step = 0;
+        }
+      } else {
+        fresh_r = true;
       }
-    } else {
+    }
+    if (fresh_r) {
       fresh[batch_name].Push(m);
     }
   }
@@ -602,13 +638,14 @@ bool Reactor::Discharge(int i) {
 //________________________________________________________________________
 void Reactor::Load(int i) {
   std::string batch_name = "batch_" + std::to_string(i);
+  std::string fresh_name = "fresh_" + std::to_string(i);
   double n = std::min(batch_size - core[batch_name].quantity(),
-                      fresh[batch_name].quantity());
+                      fresh[fresh_name].quantity());
   if (n != 0) {
     std::stringstream ss;
     ss << n << " batches";
     Record("LOAD", ss.str());
-    core[batch_name].Push(fresh[batch_name].Pop(n));
+    core[batch_name].Push(fresh[fresh_name].Pop(n));
   }
 }
 

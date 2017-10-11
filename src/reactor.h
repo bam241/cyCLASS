@@ -35,7 +35,16 @@ class Reactor : public cyclus::Facility,
       std::vector<std::pair<cyclus::Trade<cyclus::Material>,
                             cyclus::Material::Ptr>>& responses);
 
-  #pragma cyclus decl
+  virtual cyclus::Inventories SnapshotInv();
+  virtual void InitInv(cyclus::Inventories& inv);
+  virtual void InitFrom(Reactor* m);
+  virtual void InitFrom(cyclus::QueryableBackend* b);
+
+  #pragma cyclus clone
+  #pragma cyclus infiletodb
+  #pragma cyclus schema
+  #pragma cyclus annotations
+  #pragma cyclus snapshot
 
  private:
   std::string fuel_incommod(cyclus::Material::Ptr m);
