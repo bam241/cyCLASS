@@ -46,7 +46,7 @@ class Reactor : public cyclus::Facility,
   bool Refueling();
   bool InCycle();
   template<typename T> 
-  T get_corrected_param(T param, T uncertainty); 
+  double get_corrected_param(T param, T uncertainty); 
 
   CLASSAdaptator* MyCLASSAdaptator;
 
@@ -181,13 +181,13 @@ class Reactor : public cyclus::Facility,
   }
   int cycle_time;
   #pragma cyclus var { \
-    "doc": "Uncertainty on the duration of a full operational cycle (excluding refueling " \
+    "doc": "Relative uncertainty on the duration of a full operational cycle (excluding refueling " \
     "time) in time steps.", \
-    "uilabel": "Cycle Length Uncertainty", \
-    "units": "time steps", \
+    "uilabel": "Cycle LengthRelative  Uncertainty", \
+    "units": "n.a.", \
     "default": 0, \
   }
-  int cycle_time_uncertainty;
+  double cycle_time_uncertainty;
 
   #pragma cyclus var { \
     "doc": "The duration of a full refueling period - the minimum time between"\
@@ -198,13 +198,13 @@ class Reactor : public cyclus::Facility,
   int refuel_time;
 
   #pragma cyclus var { \
-    "doc": "Uncertainty on the duration of a full refueling period - the minimum time between"\
+    "doc": "Relative Uncertainty on the duration of a full refueling period - the minimum time between"\
     " the end of a cycle and the start of the next cycle.", \
-    "uilabel": "Refueling Outage Duration", \
-    "units": "time steps", \
+    "uilabel": "Refueling Outage Duration Relative Uncertainty", \
+    "units": "n.a.", \
     "default": 0, \
   }
-  int refuel_time_uncertainty;
+  double refuel_time_uncertainty;
 
   int cycle_step;
   int refueling_step;
@@ -221,10 +221,10 @@ class Reactor : public cyclus::Facility,
   double power;
 
   #pragma cyclus var { \
-    "doc": "Uncertainty on the amount of thermal power the facility produces when operating " \
+    "doc": "Relative Uncertainty on the amount of thermal power the facility produces when operating " \
     "normally.", \
-    "uilabel": "Thermal Reactor Power Uncertainty", \
-    "units": "MWe", \
+    "uilabel": "Thermal Reactor Power Relative Uncertainty", \
+    "units": "n.a.", \
     "default": 0, \
   }
   double power_uncertainty;
