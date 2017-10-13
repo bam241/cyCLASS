@@ -216,7 +216,7 @@ void Reactor::Tick() {
       Load(batch);
       if (FullCore()){
         refueling_step = 0;
-        this_refueling_lenght = get_corrected_param(refuel_time, refuel_time_uncertainty);
+        this_refueling_lenght = get_corrected_param<int>(refuel_time, refuel_time_uncertainty);
       }
   }
 
@@ -435,7 +435,7 @@ void Reactor::AcceptMatlTrades(
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size){
         refueling_step = 0;
-        this_refueling_lenght = get_corrected_param(refuel_time, refuel_time_uncertainty);
+        this_refueling_lenght = get_corrected_param<int>(refuel_time, refuel_time_uncertainty);
       }
     } else {
       fresh[batch_name].Push(m);
@@ -525,7 +525,7 @@ void Reactor::Tock() {
       // if last batch reset cycle_step
       if ( batch == n_batch_core - 1) {
         cycle_step = 0;
-        this_cycle_lenght = get_corrected_param(cycle_time, cycle_time_uncertainty);
+        this_cycle_lenght = get_corrected_param<int>(cycle_time, cycle_time_uncertainty);
       }
     }
 
@@ -573,10 +573,11 @@ void Reactor::Transmute(int n_batch) {
 
   for (int i = 0; i < old.size(); i++) {
     double mass = old[i]->quantity();
-    double bu = power * irradiation_time / batch_size;
+    double power_corrected = get_corrected_param<double>(power, power_uncertainty);
+    double bu = power_corrected * irradiation_time / batch_size;
     cyclus::Composition::Ptr compo = old[i]->comp();
     old[i]->Transmute(
-        MyCLASSAdaptator->GetCompAfterIrradiation(compo, power, mass, burnup));
+        MyCLASSAdaptator->GetCompAfterIrradiation(compo, power_corrected, mass, burnup));
   }
 }
 
@@ -709,7 +710,8 @@ void Reactor::Record(std::string name, std::string val) {
       ->Record();
 }
 
-int Reactor::get_corrected_param(double param, double param_uncertainty) {
+template<typename T> 
+T Reactor::get_corrected_param(T param, T param_uncertainty) {
   if (param_uncertainty == 0) {
     return param;
   } else {
@@ -717,7 +719,7 @@ int Reactor::get_corrected_param(double param, double param_uncertainty) {
       std::normal_distribution<double> nd(param, param_uncertainty);
 
       double val = std::round(nd(de));
-      return (int)val;
+      return (T)val;
   }
 }
 
