@@ -54,7 +54,8 @@ class Reactor : public cyclus::Facility,
   bool Discharged();
   bool Refueling();
   bool InCycle();
-  int get_corrected_param(double param, double uncertainty); 
+  template<typename T> 
+  T get_corrected_param(T param, T uncertainty); 
 
   CLASSAdaptator* MyCLASSAdaptator;
 
