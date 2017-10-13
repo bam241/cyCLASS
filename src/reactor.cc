@@ -239,16 +239,13 @@ void Reactor::Tick() {
       this_refueling_lenght =
           get_corrected_param(refuel_time, refuel_time_uncertainty);
     }
-<<<<<<< HEAD
-=======
   if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()){
       int batch = cycle_step / cycle_time -1;
       Load(batch);
       if (FullCore()){
         refueling_step = 0;
-        this_refueling_lenght = get_corrected_param<int>(refuel_time, refuel_time_uncertainty);
+        this_refueling_lenght = round(get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
       }
->>>>>>> working(?) template method cyinstall!
   }
 
   int t = context()->time();
@@ -470,11 +467,15 @@ void Reactor::AcceptMatlTrades(
       if (core[batch_name].quantity() == batch_size) {
         refueling_step = 0;
 <<<<<<< HEAD
+<<<<<<< HEAD
         this_refueling_lenght =
             get_corrected_param(refuel_time, refuel_time_uncertainty);
 =======
         this_refueling_lenght = get_corrected_param<int>(refuel_time, refuel_time_uncertainty);
 >>>>>>> working(?) template method cyinstall!
+=======
+        this_refueling_lenght = round(get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
+>>>>>>> re-add rounding capanilities for int variation
       }
     }
     if (fresh_r) {
@@ -563,7 +564,7 @@ void Reactor::Tock() {
       // if last batch reset cycle_step
       if (batch == n_batch_core - 1) {
         cycle_step = 0;
-        this_cycle_lenght = get_corrected_param<int>(cycle_time, cycle_time_uncertainty);
+        this_cycle_lenght = round(get_corrected_param<int>(cycle_time, cycle_time_uncertainty));
       }
     }
 
@@ -741,15 +742,15 @@ void Reactor::Record(std::string name, std::string val) {
 }
 
 template<typename T> 
-T Reactor::get_corrected_param(T param, T param_uncertainty) {
+double Reactor::get_corrected_param(T param, T param_uncertainty) {
   if (param_uncertainty == 0) {
     return param;
   } else {
       std::default_random_engine de(std::clock());
-      std::normal_distribution<double> nd(param, param_uncertainty);
+      std::normal_distribution<double> nd(param, param*param_uncertainty);
 
-      double val = std::round(nd(de));
-      return (T)val;
+      double val = nd(de);
+      return val;
   }
 }
 
