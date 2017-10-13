@@ -43,6 +43,20 @@ Reactor::Reactor(cyclus::Context* ctx)
   MyCLASSAdaptator = 0;
 }
 
+#pragma cyclus def clone cyclass::Reactor
+
+#pragma cyclus def schema cyclass::Reactor
+
+#pragma cyclus def annotations cyclass::Reactor
+
+#pragma cyclus def infiletodb cyclass::Reactor
+
+#pragma cyclus def snapshot cyclass::Reactor
+
+#pragma cyclus def snapshotinv cyclass::Reactor
+
+#pragma cyclus def initinv cyclass::Reactor
+
 //________________________________________________________________________
 void Reactor::InitFrom(Reactor* m) {
 #pragma cyclus impl initfromcopy cyclass::Reactor
@@ -58,42 +72,6 @@ void Reactor::InitFrom(cyclus::QueryableBackend* b) {
                              tk::CommodInfo(power_cap, power_cap));
 }
 
-cyclus::Inventories Reactor::SnapshotInv() {
-  cyclus::Inventories invs;
-
-  // these inventory names are intentionally convoluted so as to not clash
-  // with the user-specified stream commods that are used as the separations
-  // streams inventory names.
-  invs["spent-inv-name"] = spent.PopNRes(spent.count());
-  spent.Push(invs["spent-inv-name"]);
-  std::map<std::string, ResBuf<Material> >::iterator it;
-  for (it = fresh.begin(); it != fresh.end(); ++it) {
-    invs[it->first] = it->second.PopNRes(it->second.count());
-    it->second.Push(invs[it->first]);
-  }
-  for (it = core.begin(); it != core.end(); ++it) {
-    invs[it->first] = it->second.PopNRes(it->second.count());
-    it->second.Push(invs[it->first]);
-  }
-  return invs;
-}
-void Reactor::InitInv(cyclus::Inventories& inv) {
-  spent.Push(inv["spent-inv-name"]);
-
-  cyclus::Inventories::iterator it;
-  for (it = inv.begin(); it != inv.end(); ++it) {
-    std::map<std::string, ResBuf<Material> >::iterator it2;
-    it2 = fresh.find(it->first);
-    if (it2 != fresh.end()) {
-      fresh[it->first].Push(it->second);
-    }
-    it2 = core.find(it->first);
-    if (it2 != core.end()) {
-      core[it->first].Push(it->second);
-    }
-  }
-}
-
 //________________________________________________________________________
 void Reactor::EnterNotify() {
   cyclus::Facility::EnterNotify();
@@ -106,8 +84,7 @@ void Reactor::EnterNotify() {
   // initialisation internal variable
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
-    std::string fresh_name = "fresh_" + std::to_string(i);
-    fresh[fresh_name].capacity(n_batch_fresh * batch_size);
+    fresh[batch_name].capacity(n_batch_fresh * batch_size);
     core[batch_name].capacity(batch_size);
     discharged.push_back(true);
   }
@@ -204,10 +181,10 @@ void Reactor::Tick() {
     // burn a batch from fresh inventory on this time step.  When retired,
     // this batch also needs to be discharged to spent fuel inventory.
     for (int i = 0; i < n_batch_core; i++) {
-      std::string fresh_name = "fresh_" + std::to_string(i);
-      while (fresh[fresh_name].quantity() > 0 &&
+      std::string batch_name = "batch_" + std::to_string(i);
+      while (fresh[batch_name].quantity() > 0 &&
              spent.space() >= m_batch_spent) {
-        spent.Push(fresh[fresh_name].Pop());
+        spent.Push(fresh[batch_name].Pop());
       }
       return;
     }
@@ -230,22 +207,12 @@ void Reactor::Tick() {
   }
   if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()) {
     int batch = cycle_step / cycle_time - 1;
-    while (batch < 0) {
-      batch += n_batch_core;
-    }
     Load(batch);
     if (FullCore()) {
       refueling_step = 0;
       this_refueling_lenght =
-          get_corrected_param(refuel_time, refuel_time_uncertainty);
+          round(get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
     }
-  if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()){
-      int batch = cycle_step / cycle_time -1;
-      Load(batch);
-      if (FullCore()){
-        refueling_step = 0;
-        this_refueling_lenght = round(get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
-      }
   }
 
   int t = context()->time();
@@ -283,7 +250,6 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
   for (int u = 0; u < n_batch_core; u++) {
     // Deal first with the Core
     std::string batch_name = "batch_" + std::to_string(u);
-    std::string fresh_name = "fresh_" + std::to_string(u);
     double mass_in_core_n = core[batch_name].quantity();
     double mass_to_order = batch_size - mass_in_core_n;
 
@@ -331,7 +297,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       ports.insert(port);
     }
 
-    double mass_fresh_n = fresh[fresh_name].quantity();
+    double mass_fresh_n = fresh[batch_name].quantity();
 
     mass_to_order = n_batch_fresh * batch_size - mass_fresh_n;
 
@@ -449,14 +415,9 @@ void Reactor::AcceptMatlTrades(
     std::string batch_name = req_inventories_[trade->first.request];
     std::string commod = trade->first.request->commodity();
     bool fresh_r = false;
-    if (batch_name.at(0) == 'f' ){
-      fresh_r = true;
-      batch_name = batch_name.substr(1);
-    }
-
-    bool fresh_r = false;
     if (batch_name.at(0) == 'f') {
       fresh_r = true;
+      batch_name = batch_name.substr(1);
     }
 
     Material::Ptr m = trade->second;
@@ -466,19 +427,10 @@ void Reactor::AcceptMatlTrades(
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size) {
         refueling_step = 0;
-<<<<<<< HEAD
-<<<<<<< HEAD
-        this_refueling_lenght =
-            get_corrected_param(refuel_time, refuel_time_uncertainty);
-=======
-        this_refueling_lenght = get_corrected_param<int>(refuel_time, refuel_time_uncertainty);
->>>>>>> working(?) template method cyinstall!
-=======
-        this_refueling_lenght = round(get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
->>>>>>> re-add rounding capanilities for int variation
+        this_refueling_lenght = round(
+            get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
       }
-    }
-    if (fresh_r) {
+    } else {
       fresh[batch_name].Push(m);
     }
   }
@@ -564,7 +516,8 @@ void Reactor::Tock() {
       // if last batch reset cycle_step
       if (batch == n_batch_core - 1) {
         cycle_step = 0;
-        this_cycle_lenght = round(get_corrected_param<int>(cycle_time, cycle_time_uncertainty));
+        this_cycle_lenght =
+            round(get_corrected_param<int>(cycle_time, cycle_time_uncertainty));
       }
     }
 
@@ -612,11 +565,12 @@ void Reactor::Transmute(int n_batch) {
 
   for (int i = 0; i < old.size(); i++) {
     double mass = old[i]->quantity();
-    double power_corrected = get_corrected_param<double>(power, power_uncertainty);
+    double power_corrected =
+        get_corrected_param<double>(power, power_uncertainty);
     double bu = power_corrected * irradiation_time / batch_size;
     cyclus::Composition::Ptr compo = old[i]->comp();
-    old[i]->Transmute(
-        MyCLASSAdaptator->GetCompAfterIrradiation(compo, power_corrected, mass, burnup));
+    old[i]->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
+        compo, power_corrected, mass, burnup));
   }
 }
 
@@ -652,14 +606,13 @@ bool Reactor::Discharge(int i) {
 //________________________________________________________________________
 void Reactor::Load(int i) {
   std::string batch_name = "batch_" + std::to_string(i);
-  std::string fresh_name = "fresh_" + std::to_string(i);
   double n = std::min(batch_size - core[batch_name].quantity(),
-                      fresh[fresh_name].quantity());
+                      fresh[batch_name].quantity());
   if (n != 0) {
     std::stringstream ss;
     ss << n << " batches";
     Record("LOAD", ss.str());
-    core[batch_name].Push(fresh[fresh_name].Pop(n));
+    core[batch_name].Push(fresh[batch_name].Pop(n));
   }
 }
 
@@ -741,16 +694,16 @@ void Reactor::Record(std::string name, std::string val) {
       ->Record();
 }
 
-template<typename T> 
+template <typename T>
 double Reactor::get_corrected_param(T param, T param_uncertainty) {
   if (param_uncertainty == 0) {
     return param;
   } else {
-      std::default_random_engine de(std::clock());
-      std::normal_distribution<double> nd(param, param*param_uncertainty);
+    std::default_random_engine de(std::clock());
+    std::normal_distribution<double> nd(param, param * param_uncertainty);
 
-      double val = nd(de);
-      return val;
+    double val = nd(de);
+    return val;
   }
 }
 
