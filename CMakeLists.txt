@@ -13,6 +13,8 @@ ENDIF()
 
 PROJECT(cyclass)
 
+SET( CMAKE_C_COMPILER "/tmp/mouginot/opt/gcc/bin/gcc")
+SET( CMAKE_CXX_COMPILER "/tmp/mouginot/opt/gcc/bin/g++")
  # Vcheck for and enable c++11 support
 INCLUDE(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -117,7 +119,7 @@ set(LIBS ${LIBS} ${COIN_LIBRARIES})
 
 # Find ROOT
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH} ./cmake")
-FIND_PACKAGE(ROOT REQUIRED COMPONENTS MathCore RIO Hist Tree Net TMVA)
+FIND_PACKAGE(ROOT REQUIRED COMPONENTS Gui Core Cint RIO Net Hist Graf Graf3d Gpad Tree Rint Postscript Matrix Physics MathCore Thread pthread Wl rpath m dl TMVA)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${ROOT_INCLUDE_DIRS})
 ADD_DEFINITIONS(${ROOT_CXX_FLAGS})
 SET(CYCLASS_INCLUDE_DIRS ${ROOT_INCLUDE_DIRS} )
