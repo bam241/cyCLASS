@@ -34,11 +34,33 @@ FIND_PATH(CLASS_INCLUDE_DIR CLASSHeaders.hxx
     /usr/local/CLASS /opt/local/CLASS
     PATH_SUFFIXES CLASS/include include include/CLASS source/include CLASS/source/include)
 
+FIND_PATH(CLASS_EQ_INCLUDE_DIR EQ_OneParameter.hxx
+    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/EquivalenceModel"
+    "${CLASS_ROOT_DIR}/EquivalenceModel"
+    "${CLASS_ROOT_DIR}/EquivalenceModel/CLASS"
+    /usr/local/CLASS /opt/local/CLASS
+    PATH_SUFFIXES CLASS/EquivalenceModel EquivalenceModel EquivalenceModel/CLASS source/EquivalenceModel CLASS/source/EquivalenceModel)
+
+FIND_PATH(CLASS_EQ_INCLUDE_DIR XSM_MLP.hxx
+    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/XS"
+    "${CLASS_ROOT_DIR}/XS"
+    "${CLASS_ROOT_DIR}/XS/CLASS"
+    /usr/local/CLASS /opt/local/CLASS
+    PATH_SUFFIXES CLASS/XS XS XS/CLASS source/XS CLASS/source/XS)
+
+FIND_PATH(CLASS_EQ_INCLUDE_DIR IM_RK4.hxx
+    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/IM"
+    "${CLASS_ROOT_DIR}/IM"
+    "${CLASS_ROOT_DIR}/IM/CLASS"
+    /usr/local/CLASS /opt/local/CLASS
+    PATH_SUFFIXES CLASS/IM IM IM/CLASS source/IM CLASS/source/IM)
+
 # Add the root dir to the hints
 SET(CLASS_ROOT_DIR "${CLASS_INCLUDE_DIR}/../..")
 
 # Look for the library
-FIND_LIBRARY(CLASS_LIBRARY libCLASSpkg.a
+FIND_LIBRARY(CLASS_LIBRARY 
+    NAMES CLASSpkg
     HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/lib" "$ENV{CLASS_PATH}/lib"
     "$ENV{CLASS_lib}"
     /usr/local/CLASS/lib /usr/local/CLASS
@@ -82,5 +104,8 @@ ENDIF(CLASS_FOUND)
 
 MARK_AS_ADVANCED(
     CLASS_INCLUDE_DIR
+    CLASS_EQ_INCLUDE_DIR
+    CLASS_XS_INCLUDE_DIR
+    CLASS_IM_INCLUDE_DIR
     CLASS_LIBRARY
     )
