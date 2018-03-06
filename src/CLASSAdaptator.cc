@@ -19,13 +19,6 @@ using cyclus::Nuc;
 using cyclus::Material;
 using cyclus::Composition;
 
-//#define cyDBGL;		std::cout << __FILE__ << " : " << __LINE__ << "
-//["
-//<< __FUNCTION__ << "]" << std::endl;
-#define cyDBGL \
-  ;            \
-  ;
-
 namespace cyclass {
 
 EquivalenceModel* EQmodelfor(std::string name, std::string command) {
@@ -46,7 +39,7 @@ EquivalenceModel* EQmodelfor(std::string name, std::string command) {
     getline(command_t, buff, ',');
     double CriticalityThreshold = atof(buff.c_str());
 
-    EQ_OneParameter* myEQM = EQ_OneParameter(WeightPath, InformationFile);
+    EQ_OneParameter* myEQM = new EQ_OneParameter(WeightPath, InformationFile);
     myEQM->SetModelParameter("kThreshold", CriticalityThreshold);
     myEQM->SetModelParameter("NumberOfBatch", NumOfBatch);
     return myEQM;
@@ -65,17 +58,7 @@ XSModel* XSmodelfor(std::string name, std::string command) {
     string Info = buff;
     getline(command_t, buff, ',');
 
-    bool istime;
-    if (buff == "true") {
-      istime = true;
-    } else if (buff == "false") {
-      istime = false;
-    } else {
-      std::stringstream msg;
-      msg << "bad XSmodel command: " << command << " for " << name << " Model ";
-      throw cyclus::ValidationError(msg.str());
-    }
-    return new XSM_MLP(TMVA_Weight_Dir.c_str(), Info.c_str(), istime);
+    return new XSM_MLP(TMVA_Weight_Dir.c_str(), Info.c_str());
 
   } else {
     stringstream msg;
@@ -97,58 +80,58 @@ IrradiationModel* IMmodelfor(std::string name, std::string command) {
 }
 
 CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::string EQcommand) {
-  cyDBGL;
+  
   myPhysicsModel = new PhysicsModels();
 
-  myPhysicsModel->SetEquivlalenceModel(EQmodelfor(EQModel, EQcommand));
+  myPhysicsModel->SetEQM(EQmodelfor(EQModel, EQcommand));
 
-  TMVAWeightFile = EQcommand;
-  IsotopicVector IV_fissil =
-      myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fissile");
-  if (IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
-    IV_fissil += ZAI(95, 241, 0) * 1;
+  //TMVAWeightFile = EQcommand;
+  //IsotopicVector IV_fissil =
+  //    myPhysicsModel->GetEQM()->GetStreamList("Fissile");
+ // if (IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
+ //   IV_fissil += ZAI(95, 241, 0) * 1;
 
-  fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
+ // fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
 
-  fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(
-      myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fertile")));
-  cyDBGL;
+ // fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(
+ //     myPhysicsModel->GetEQM()->GetStreamList("Fertile")));
+  
 }
 
 CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::string EQcommand,
                                std::string XSModel, std::string XScommand,
                                std::string IMModel, std::string IMcommand) {
-  cyDBGL;
+  
   TMVAWeightFile = EQcommand;
   myPhysicsModel = new PhysicsModels();
-  cyDBGL;
+  
 
-  myPhysicsModel->SetEquivlalenceModel(EQmodelfor(EQModel, EQcommand));
-  myPhysicsModel->SetXSModel(XSmodelfor(XSModel, XScommand));
-  myPhysicsModel->SetIrradiationModel(IMmodelfor(IMModel, IMcommand));
-  cyDBGL;
+  myPhysicsModel->SetEQM(EQmodelfor(EQModel, EQcommand));
+  myPhysicsModel->SetXSM(XSmodelfor(XSModel, XScommand));
+  myPhysicsModel->SetIM(IMmodelfor(IMModel, IMcommand));
+  
 
-  cyDBGL;
-  IsotopicVector IV_fissil =
-      myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fissile");
-  if (IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
-    IV_fissil += ZAI(95, 241, 0) * 1;
+  
+ // IsotopicVector IV_fissil =
+ //     myPhysicsModel->GetEQM()->GetStreamList("Fissile");
+ // if (IV_fissil.GetZAIIsotopicQuantity(94, 241, 0) > 0)
+ //   IV_fissil += ZAI(95, 241, 0) * 1;
 
-  cyDBGL;
+ // 
 
-  fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
-  cyDBGL;
+ // fissil_list = Composition::CreateFromAtom(CLASS2CYCLUS(IV_fissil));
+ // 
 
-  fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(
-      myPhysicsModel->GetEquivalenceModel()->GetStreamList("Fertile")));
-  cyDBGL;
+ // fertil_list = Composition::CreateFromAtom(CLASS2CYCLUS(
+ //     myPhysicsModel->GetEQM()->GetStreamList("Fertile")));
+  
 }
 
 //________________________________________________________________________
 float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
                                     cyclus::Composition::Ptr c_fertil,
                                     double bu_target, double eps) const {
-  cyDBGL;
+  
 
   double val = 0.95;
 
@@ -157,13 +140,13 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
   
   IsotopicVector iv_fuel = iv_fissil * val + (1-val) * iv_fertil;  
   
-  float bu = myPhysicsModel->GetEquivalenceModel()->CalculateBurnUpMax(iv_fuel);
+  float bu = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel, "BurnUpMax");
   float val_p = val;
   float bu_p = bu;
 
-  val = 0.05
+  val = 0.05;
   iv_fuel = iv_fissil * val + (1-val) * iv_fertil;  
-  bu = myPhysicsModel->GetEquivalenceModel()->CalculateBurnUpMax(iv_fuel);
+  bu = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel, "BurnUpMax");
 
   while( abs(bu-bu_target) > eps){
       // BU  = A * frac + B;
@@ -177,16 +160,16 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
       //target bu = bu_target
       val = (bu_target - B) / A;
       iv_fuel = iv_fissil * val + (1-val) * iv_fertil;
-      bu = myPhysicsModel->GetEquivalenceModel()->CalculateBurnUpMax(iv_fuel);
+      bu = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel, "BurnUpMax");
   }
 
-  cyDBGL;
+  
   return val;  //
 }
 
-float CLASSAdaptator::GetBU(cyclus::Composition::Ptr fuel double eps) const{
+float CLASSAdaptator::GetBU(cyclus::Composition::Ptr fuel, double eps) const{
   IsotopicVector iv_fuel = CYCLUS2CLASS(fuel);
-  float bu = myPhysicsModel->GetEquivalenceModel()->CalculateBurnUpMax(iv_fuel);
+  float bu = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel, "BurnUpMax");
   return bu;
 }
 
@@ -240,19 +223,19 @@ double AtomIn(cyclus::Composition::Ptr Source) {
 //________________________________________________________________________
 cyclus::Composition::Ptr ExtractAccordinglist(cyclus::Composition::Ptr source,
                                               cyclus::Composition::Ptr list) {
-  cyDBGL;
+  
   // create Output Composition
   CompMap separatedCompo;
 
-  cyDBGL;
+  
   // Extract Nuc map from source compo & list...
   CompMap sourceComp = source->atom();
-  cyDBGL;
+  
   CompMap ListComp = list->atom();
-  cyDBGL;
+  
 
   CompMap::iterator it;
-  cyDBGL;
+  
 
   // Fill output composition
   for (it = ListComp.begin(); it != ListComp.end(); it++) {
@@ -261,7 +244,7 @@ cyclus::Composition::Ptr ExtractAccordinglist(cyclus::Composition::Ptr source,
     if (it2 != sourceComp.end())
       separatedCompo.insert(std::pair<Nuc, double>(it->first, it2->second));
   }
-  cyDBGL;
+  
 
   return Composition::CreateFromAtom(separatedCompo);
 }

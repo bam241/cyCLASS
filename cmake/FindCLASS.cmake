@@ -35,25 +35,25 @@ FIND_PATH(CLASS_INCLUDE_DIR CLASSHeaders.hxx
     PATH_SUFFIXES CLASS/include include include/CLASS source/include CLASS/source/include)
 
 FIND_PATH(CLASS_EQ_INCLUDE_DIR EQ_OneParameter.hxx
-    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/EquivalenceModel"
-    "${CLASS_ROOT_DIR}/EquivalenceModel"
-    "${CLASS_ROOT_DIR}/EquivalenceModel/CLASS"
+    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/Equivalence"
+    "${CLASS_ROOT_DIR}/Equivalence"
+    "${CLASS_ROOT_DIR}/Equivalence/CLASS"
     /usr/local/CLASS /opt/local/CLASS
-    PATH_SUFFIXES CLASS/EquivalenceModel EquivalenceModel EquivalenceModel/CLASS source/EquivalenceModel CLASS/source/EquivalenceModel)
+    PATH_SUFFIXES CLASS/Equivalence Equivalence Equivalence/CLASS source/Equivalence CLASS/source/Equivalence)
 
-FIND_PATH(CLASS_EQ_INCLUDE_DIR XSM_MLP.hxx
+FIND_PATH(CLASS_XS_INCLUDE_DIR XSM_MLP.hxx
     HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/XS"
     "${CLASS_ROOT_DIR}/XS"
     "${CLASS_ROOT_DIR}/XS/CLASS"
     /usr/local/CLASS /opt/local/CLASS
     PATH_SUFFIXES CLASS/XS XS XS/CLASS source/XS CLASS/source/XS)
 
-FIND_PATH(CLASS_EQ_INCLUDE_DIR IM_RK4.hxx
-    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/IM"
-    "${CLASS_ROOT_DIR}/IM"
-    "${CLASS_ROOT_DIR}/IM/CLASS"
+FIND_PATH(CLASS_IM_INCLUDE_DIR IM_RK4.hxx
+    HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/source/Model/Irradiation"
+    "${CLASS_ROOT_DIR}/Irradiation"
+    "${CLASS_ROOT_DIR}/Irradiation/CLASS"
     /usr/local/CLASS /opt/local/CLASS
-    PATH_SUFFIXES CLASS/IM IM IM/CLASS source/IM CLASS/source/IM)
+    PATH_SUFFIXES CLASS/Irradiation Irradiation Irradiation/CLASS source/Irradiation CLASS/source/Irradiation)
 
 # Add the root dir to the hints
 SET(CLASS_ROOT_DIR "${CLASS_INCLUDE_DIR}/../..")
@@ -72,6 +72,9 @@ IF(CLASS_INCLUDE_DIR AND CLASS_LIBRARY)
     SET(CLASS_FOUND 1)
     SET(CLASS_LIBRARIES "${CLASS_LIBRARY}")
     SET(CLASS_INCLUDE_DIRS "${CLASS_INCLUDE_DIR}")
+    SET(CLASS_XS_INCLUDE_DIRS "${CLASS_XS_INCLUDE_DIR}")
+    SET(CLASS_EQ_INCLUDE_DIRS "${CLASS_EQ_INCLUDE_DIR}")
+    SET(CLASS_IM_INCLUDE_DIRS "${CLASS_IM_INCLUDE_DIR}")
 ELSE()
     SET(CLASS_FOUND 0)
     SET(CLASS_LIBRARIES)
@@ -102,10 +105,8 @@ ELSE(CLASS_FOUND)
 
 ENDIF(CLASS_FOUND)
 
+
 MARK_AS_ADVANCED(
-    CLASS_INCLUDE_DIR
-    CLASS_EQ_INCLUDE_DIR
-    CLASS_XS_INCLUDE_DIR
-    CLASS_IM_INCLUDE_DIR
+    CLASS_INCLUDE_DIRS
     CLASS_LIBRARY
     )

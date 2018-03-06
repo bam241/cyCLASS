@@ -41,7 +41,7 @@ namespace cyclass {
         // Lauch the MLP (using TMVA) to predict the requeirt fissil enrichment (according to the compisition of fissil and fertil stream and the targeted burnup)
         float GetEnrichment(cyclus::Composition::Ptr c_fissil,
                             cyclus::Composition::Ptr c_fertil,
-                            double BurnUp) const;
+                            double BurnUp, double eps = 1e-6) const;
 
         // liner dicchotomy to determine the Burn-up reachable by a fuel depending of its composition...
         float GetBU(cyclus::Composition::Ptr fuel, double eps = 1e-6 ) const;
