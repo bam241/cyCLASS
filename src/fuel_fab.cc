@@ -6,9 +6,6 @@ using cyclus::Material;
 using cyclus::Composition;
 using pyne::simple_xs;
 
-//#define cyDBGL; std::cout << __FILE__ << " : " << __LINE__ << " [" << __FUNCTION__ << "]" << std::endl;
-#define cyDBGL;
- ;
 
 #define SHOW(X)                                                     \
   std::cout << std::setprecision(17) << __FILE__ << ":" << __LINE__ \
@@ -73,18 +70,18 @@ FuelFab::FuelFab(cyclus::Context* ctx)
       throughput(0),
       eq_model("eq"),
       eq_command("eq") {
-  cyDBGL;
+  
  cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
       "the FuelFab archetype "
       "is experimental");
   MyCLASSAdaptator = 0;
 
-  cyDBGL;
+  
 
 }
 
 void FuelFab::EnterNotify() {
-  cyDBGL;
+  
  cyclus::Facility::EnterNotify();
 
   if (fiss_commod_prefs.empty()) {
@@ -108,7 +105,7 @@ void FuelFab::EnterNotify() {
        << " fill_commod_prefs vals, expected " << fill_commods.size();
     throw cyclus::ValidationError(ss.str());
   }
-  cyDBGL;
+  
 
 }
 
@@ -116,7 +113,7 @@ void FuelFab::EnterNotify() {
 std::set<cyclus::RequestPortfolio<Material>::Ptr> FuelFab::GetMatlRequests() {
   using cyclus::RequestPortfolio;
 
-  cyDBGL;
+  
  std::set<RequestPortfolio<Material>::Ptr> ports;
 
   bool exclusive = false;
@@ -161,19 +158,19 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> FuelFab::GetMatlRequests() {
     ports.insert(port);
   }
 
-  cyDBGL;
+  
  return ports;
 }
 
 //________________________________________________________________________
 bool Contains(std::vector<std::string> vec, std::string s) {
-  cyDBGL;
+  
  for (int i = 0; i < vec.size(); i++) {
     if (vec[i] == s) {
       return true;
     }
   }
-  cyDBGL;
+  
  return false;
 }
 
@@ -181,7 +178,7 @@ bool Contains(std::vector<std::string> vec, std::string s) {
 void FuelFab::AcceptMatlTrades(
     const std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
         responses) {
-  cyDBGL;
+  
  std::vector<std::pair<cyclus::Trade<cyclus::Material>,
                                cyclus::Material::Ptr> >::const_iterator trade;
 
@@ -209,14 +206,14 @@ void FuelFab::AcceptMatlTrades(
   if (fiss.count() > 1) {
     fiss.Push(cyclus::toolkit::Squash(fiss.PopN(fiss.count())));
   }
-  cyDBGL;
+  
 
 }
 
 //________________________________________________________________________
 std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
     cyclus::CommodMap<Material>::type& commod_requests) {
-  cyDBGL;
+  
  using cyclus::BidPortfolio;
 
   std::set<BidPortfolio<Material>::Ptr> ports;
@@ -251,43 +248,43 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
 
   BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
   for (int j = 0; j < reqs.size(); j++) {
-    cyDBGL;
+    
  cyclus::Request<Material>* req = reqs[j];
-    cyDBGL;
+    
 
 
         Composition::Ptr tgt = req->target()->comp();
-    cyDBGL;
+    
  double tgt_qty = req->target()->quantity();
-    cyDBGL;
+    
  double BU_tgt = MyCLASSAdaptator->GetBU(tgt);
 
-    cyDBGL;
+    
  double fiss_frac =
         MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
-    cyDBGL;
+    
 
 
         double fill_frac = 1 - fiss_frac;
-    cyDBGL;
+    
 
 
         fiss_frac = AtomToMassFrac(fiss_frac, c_fiss, c_fill);
     fill_frac = AtomToMassFrac(fill_frac, c_fill, c_fiss);
 
     Material::Ptr m1 = Material::CreateUntracked(fiss_frac * tgt_qty, c_fiss);
-    cyDBGL;
+    
 
 
         Material::Ptr m2 =
             Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
     m1->Absorb(m2);
-    cyDBGL;
+    
 
 
         bool exclusive = false;
     port->AddBid(req, m1, this, exclusive);
-    cyDBGL;
+    
 
   }
 
@@ -307,7 +304,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   cyclus::CapacityConstraint<Material> cc(throughput);
   port->AddConstraint(cc);
   ports.insert(port);
-  cyDBGL;
+  
  return ports;
 }
 
@@ -317,7 +314,7 @@ void FuelFab::GetMatlTrades(
     std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
         responses) {
   using cyclus::Trade;
-  cyDBGL;
+  
 
 
       if (!MyCLASSAdaptator) {
@@ -392,13 +389,13 @@ void FuelFab::GetMatlTrades(
       responses.push_back(std::make_pair(trades[i], m));
     }
   }
-  cyDBGL;
+  
 
 }
 
 //________________________________________________________________________
 extern "C" cyclus::Agent* ConstructFuelFab(cyclus::Context* ctx) {
-  cyDBGL;
+  
  return new FuelFab(ctx);
 }
 

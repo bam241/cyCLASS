@@ -133,7 +133,7 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
                                     double bu_target, double eps) const {
   
 
-  double val = 0.95;
+  double val = 0.20;
 
   IsotopicVector iv_fissil = CYCLUS2CLASS(c_fissil);
   IsotopicVector iv_fertil = CYCLUS2CLASS(c_fertil);
@@ -144,15 +144,16 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
   float val_p = val;
   float bu_p = bu;
 
-  val = 0.05;
+  val = 0.03;
   iv_fuel = iv_fissil * val + (1-val) * iv_fertil;  
   bu = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel, "BurnUpMax");
-
-  while( abs(bu-bu_target) > eps){
+  int i = 0;
+  while( abs(bu-bu_target) > eps ){
       // BU  = A * frac + B;
       float d_bu = bu-bu_target;
       double A = (bu - bu_p) / (val - val_p);
       double B = bu - A * val;
+      if( bu == bu_p) return val;
       //old = new
       bu_p = bu;
       val_p = val;
@@ -161,9 +162,8 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
       val = (bu_target - B) / A;
       iv_fuel = iv_fissil * val + (1-val) * iv_fertil;
       bu = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel, "BurnUpMax");
+      i++;
   }
-
-  
   return val;  //
 }
 
