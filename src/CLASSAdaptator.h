@@ -44,7 +44,7 @@ namespace cyclass {
                             double BurnUp, double eps = 1e-6) const;
 
         // liner dicchotomy to determine the Burn-up reachable by a fuel depending of its composition...
-        float GetBU(cyclus::Composition::Ptr fuel, double eps = 1e-6 ) const;
+        float GetTargetValue(cyclus::Composition::Ptr fuel, double eps = 1e-6 ) const;
 
         cyclus::Composition::Ptr GetCompAfterIrradiation(cyclus::Composition::Ptr InitialCompo, double poweer, double mass, double burnup);
 

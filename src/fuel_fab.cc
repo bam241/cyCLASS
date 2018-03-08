@@ -6,7 +6,6 @@ using cyclus::Material;
 using cyclus::Composition;
 using pyne::simple_xs;
 
-
 #define SHOW(X)                                                     \
   std::cout << std::setprecision(17) << __FILE__ << ":" << __LINE__ \
             << ": " #X " = " << X << "\n"
@@ -70,19 +69,14 @@ FuelFab::FuelFab(cyclus::Context* ctx)
       throughput(0),
       eq_model("eq"),
       eq_command("eq") {
-  
- cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
+  cyclus::Warn<cyclus::EXPERIMENTAL_WARNING>(
       "the FuelFab archetype "
       "is experimental");
   MyCLASSAdaptator = 0;
-
-  
-
 }
 
 void FuelFab::EnterNotify() {
-  
- cyclus::Facility::EnterNotify();
+  cyclus::Facility::EnterNotify();
 
   if (fiss_commod_prefs.empty()) {
     for (int i = 0; i < fiss_commods.size(); i++) {
@@ -105,16 +99,13 @@ void FuelFab::EnterNotify() {
        << " fill_commod_prefs vals, expected " << fill_commods.size();
     throw cyclus::ValidationError(ss.str());
   }
-  
-
 }
 
 //________________________________________________________________________
 std::set<cyclus::RequestPortfolio<Material>::Ptr> FuelFab::GetMatlRequests() {
   using cyclus::RequestPortfolio;
 
-  
- std::set<RequestPortfolio<Material>::Ptr> ports;
+  std::set<RequestPortfolio<Material>::Ptr> ports;
 
   bool exclusive = false;
 
@@ -158,29 +149,26 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> FuelFab::GetMatlRequests() {
     ports.insert(port);
   }
 
-  
- return ports;
+  return ports;
 }
 
 //________________________________________________________________________
 bool Contains(std::vector<std::string> vec, std::string s) {
-  
- for (int i = 0; i < vec.size(); i++) {
+  for (int i = 0; i < vec.size(); i++) {
     if (vec[i] == s) {
       return true;
     }
   }
-  
- return false;
+
+  return false;
 }
 
 //________________________________________________________________________
 void FuelFab::AcceptMatlTrades(
     const std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
         responses) {
-  
- std::vector<std::pair<cyclus::Trade<cyclus::Material>,
-                               cyclus::Material::Ptr> >::const_iterator trade;
+  std::vector<std::pair<cyclus::Trade<cyclus::Material>,
+                        cyclus::Material::Ptr> >::const_iterator trade;
 
   for (trade = responses.begin(); trade != responses.end(); ++trade) {
     std::string commod = trade->first.request->commodity();
@@ -206,15 +194,12 @@ void FuelFab::AcceptMatlTrades(
   if (fiss.count() > 1) {
     fiss.Push(cyclus::toolkit::Squash(fiss.PopN(fiss.count())));
   }
-  
-
 }
 
 //________________________________________________________________________
 std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
     cyclus::CommodMap<Material>::type& commod_requests) {
-  
- using cyclus::BidPortfolio;
+  using cyclus::BidPortfolio;
 
   std::set<BidPortfolio<Material>::Ptr> ports;
   std::vector<cyclus::Request<Material>*>& reqs = commod_requests[outcommod];
@@ -248,52 +233,38 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
 
   BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
   for (int j = 0; j < reqs.size(); j++) {
-    
- cyclus::Request<Material>* req = reqs[j];
-    
+    cyclus::Request<Material>* req = reqs[j];
 
+    Composition::Ptr tgt = req->target()->comp();
 
-        Composition::Ptr tgt = req->target()->comp();
-    
- double tgt_qty = req->target()->quantity();
-    
- double BU_tgt = MyCLASSAdaptator->GetBU(tgt);
+    double tgt_qty = req->target()->quantity();
 
-    
- double fiss_frac =
-        MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
-    
+    double tgt_v = MyCLASSAdaptator->GetTargetValue(tgt);
 
+    double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
 
-        double fill_frac = 1 - fiss_frac;
-    
+    double fill_frac = 1 - fiss_frac;
 
-
-        fiss_frac = AtomToMassFrac(fiss_frac, c_fiss, c_fill);
+    fiss_frac = AtomToMassFrac(fiss_frac, c_fiss, c_fill);
     fill_frac = AtomToMassFrac(fill_frac, c_fill, c_fiss);
 
     Material::Ptr m1 = Material::CreateUntracked(fiss_frac * tgt_qty, c_fiss);
-    
 
-
-        Material::Ptr m2 =
-            Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
+    Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
     m1->Absorb(m2);
-    
 
-
-        bool exclusive = false;
+    bool exclusive = false;
     port->AddBid(req, m1, this, exclusive);
-    
-
   }
 
   cyclus::Converter<Material>::Ptr fissconv(new FissConverter(c_fill, c_fiss));
   cyclus::Converter<Material>::Ptr fillconv(new FillConverter(c_fill, c_fiss));
   // important! - the std::max calls prevent CapacityConstraint throwing a zero
   // cap exception
-  cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(),1e-10),fissconv);
-  cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(),1e-10),fillconv);
+  cyclus::CapacityConstraint<Material> fissc(std::max(fiss.quantity(), 1e-10),
+                                             fissconv);
+  cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),
+                                             fillconv);
   cyclus::CapacityConstraint<Material> max(
       std::max(std::min(fiss.quantity(), fill.quantity()), 1e-10));
 
@@ -304,8 +275,8 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   cyclus::CapacityConstraint<Material> cc(throughput);
   port->AddConstraint(cc);
   ports.insert(port);
-  
- return ports;
+
+  return ports;
 }
 
 //________________________________________________________________________
@@ -314,10 +285,8 @@ void FuelFab::GetMatlTrades(
     std::vector<std::pair<cyclus::Trade<Material>, Material::Ptr> >&
         responses) {
   using cyclus::Trade;
-  
 
-
-      if (!MyCLASSAdaptator) {
+  if (!MyCLASSAdaptator) {
     MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command);
   }
 
@@ -360,10 +329,10 @@ void FuelFab::GetMatlTrades(
       Composition::Ptr c_fiss = fiss.Peek()->comp();
       Composition::Ptr c_fill = fill.Peek()->comp();
 
-      double BU_tgt = MyCLASSAdaptator->GetBU(tgt->comp());
+      double tgt_v = MyCLASSAdaptator->GetTargetValue(tgt->comp());
 
       double fiss_frac =
-          MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, BU_tgt);
+          MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
       double fill_frac = 1 - fiss_frac;
 
       // Atomic to mass conversion...
@@ -389,14 +358,11 @@ void FuelFab::GetMatlTrades(
       responses.push_back(std::make_pair(trades[i], m));
     }
   }
-  
-
 }
 
 //________________________________________________________________________
 extern "C" cyclus::Agent* ConstructFuelFab(cyclus::Context* ctx) {
-  
- return new FuelFab(ctx);
+  return new FuelFab(ctx);
 }
 
 // Convert an atom frac (n1/(n1+n2) to a mass frac (m1/(m1+m2) given
