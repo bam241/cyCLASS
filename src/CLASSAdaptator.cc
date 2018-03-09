@@ -32,9 +32,8 @@ EquivalenceModel* EQmodelfor(std::string name, std::string command) {
     std::string InformationFile;
     getline(command_t, InformationFile, ',');
 
-
     EQ_OneParameter* myEQM = new EQ_OneParameter(WeightPath, InformationFile);
-    if(myEQM->GetTargetParameter() == "BurnUpMax"){
+    if (myEQM->GetTargetParameter() == "BurnUpMax") {
       std::string buff;
       getline(command_t, buff, ',');
       int NumOfBatch = atoi(buff.c_str());
@@ -45,8 +44,7 @@ EquivalenceModel* EQmodelfor(std::string name, std::string command) {
     double CriticalityThreshold = atof(buff.c_str());
     myEQM->SetModelParameter("kThreshold", CriticalityThreshold);
     return myEQM;
-  }
-  else {
+  } else {
     std::cout << "Unknown model name: " << name << std::endl;
     exit(1);
   }
@@ -117,10 +115,10 @@ CLASSAdaptator::CLASSAdaptator(std::string EQModel, std::string EQcommand,
 float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
                                     cyclus::Composition::Ptr c_fertil,
                                     double target, double eps) const {
-  if(myPhysicsModel->GetEQM()->GetTargetParameter() == "keffBOC"){
+  if (myPhysicsModel->GetEQM()->GetTargetParameter() == "keffBOC") {
     target = myPhysicsModel->GetEQM()->GetModelParameter()["kThreshold"];
   }
-  double val = 0.20;
+  double val = 0.10;
   IsotopicVector iv_fissil = CYCLUS2CLASS(c_fissil);
   IsotopicVector iv_fertil = CYCLUS2CLASS(c_fertil);
 
@@ -133,26 +131,34 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
   val = 0.03;
   iv_fuel = iv_fissil * val + (1 - val) * iv_fertil;
   param = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel);
-  
+
   while (abs(param - target) > eps) {
     // BU  = A * frac + B;
     float d_param = param - target;
     double A = (param - param_p) / (val - val_p);
     double B = param - A * val;
-    if (param == param_p) return val;
+    if (param == param_p) {
+      return val;
+    }
     // old = new
     param_p = param;
     val_p = val;
 
     // target param = target
     val = (target - B) / A;
+    if (val > 1) {
+      val = 1;
+    } else if (val < 0) {
+      val = 0;
+    }
     iv_fuel = iv_fissil * val + (1 - val) * iv_fertil;
     param = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel);
   }
   return val;  //
 }
 
-float CLASSAdaptator::GetTargetValue(cyclus::Composition::Ptr fuel, double eps) const {
+float CLASSAdaptator::GetTargetValue(cyclus::Composition::Ptr fuel,
+                                     double eps) const {
   IsotopicVector iv_fuel = CYCLUS2CLASS(fuel);
   return myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel);
 }

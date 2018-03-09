@@ -130,7 +130,7 @@ class Reactor : public cyclus::Facility,
     "doc": "Mass of spent fuel that can be stored on-site before" \
     " reactor operation stalls.", \
   }
-  double m_batch_spent;
+  double m_mass_spent;
 
 ///////// Model params ///////////
 
@@ -278,7 +278,7 @@ class Reactor : public cyclus::Facility,
   // referenced (e.g. n_batch_fresh, assem_size, etc.).
   map<std::string, ResBuf<cyclus::Material>> fresh;
   map<std::string, ResBuf<cyclus::Material>> core;
-  #pragma cyclus var { "capacity" : "m_batch_spent" }
+  #pragma cyclus var { "capacity" : "m_mass_spent" }
   ResBuf<cyclus::Material> spent;
 
   // should be hidden in ui (internal only). True if fuel has already been

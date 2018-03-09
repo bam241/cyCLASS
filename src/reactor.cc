@@ -21,7 +21,7 @@ Reactor::Reactor(cyclus::Context* ctx)
       batch_size(0),
       n_batch_core(0),
       burnup(0),
-      m_batch_spent(0),
+      m_mass_spent(0),
       n_batch_fresh(0),
       cycle_time(0),
       refuel_time(0),
@@ -183,7 +183,7 @@ void Reactor::Tick() {
     for (int i = 0; i < n_batch_core; i++) {
       std::string batch_name = "batch_" + std::to_string(i);
       while (fresh[batch_name].quantity() > 0 &&
-             spent.space() >= m_batch_spent) {
+             spent.space() >= m_mass_spent) {
         spent.Push(fresh[batch_name].Pop());
       }
       return;
@@ -253,7 +253,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
     double mass_in_core_n = core[batch_name].quantity();
     double mass_to_order = batch_size - mass_in_core_n;
 
-    if (mass_to_order != 0) {
+    if (mass_to_order > 0) {
       RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
       std::vector<Request<Material>*> mreqs;
 
@@ -296,7 +296,6 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       port->AddMutualReqs(mreqs);
       ports.insert(port);
     }
-
     double mass_fresh_n = fresh[batch_name].quantity();
 
     mass_to_order = n_batch_fresh * batch_size - mass_fresh_n;
@@ -325,7 +324,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       mass_to_order = std::min(mass_to_order, mass_need);
     }
 
-    if (mass_to_order != 0) {
+    if (mass_to_order > 0) {
       RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
       std::vector<Request<Material>*> mreqs;
 
@@ -419,11 +418,9 @@ void Reactor::AcceptMatlTrades(
       fresh_r = true;
       batch_name = batch_name.substr(1);
     }
-
     Material::Ptr m = trade->second;
     index_res(m, commod);
-
-    if (m->quantity() <= batch_size - core[batch_name].quantity() && !fresh_r) {
+    if ( std::abs(m->quantity() - batch_size - core[batch_name].quantity()) < cyclus::eps_rsrc()&& !fresh_r) {
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size) {
         refueling_step = 0;
@@ -590,7 +587,7 @@ std::map<std::string, MatVec> Reactor::PeekSpent() {
 bool Reactor::Discharge(int i) {
   std::string batch_name = "batch_" + std::to_string(i);
   double npop = core[batch_name].quantity();
-  if (m_batch_spent - spent.quantity() < npop) {
+  if (m_mass_spent - spent.quantity() < npop) {
     Record("DISCHARGE", "failed");
     return false;  // not enough room in spent buffer
   }
