@@ -230,33 +230,29 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   } else {
     return ports;
   }
-
+  
+  double qty_needed = 0;
   BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
   for (int j = 0; j < reqs.size(); j++) {
     cyclus::Request<Material>* req = reqs[j];
-
     Composition::Ptr tgt = req->target()->comp();
-
     double tgt_qty = req->target()->quantity();
 
     double tgt_v = MyCLASSAdaptator->GetTargetValue(tgt);
 
     double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
-
     double fill_frac = 1 - fiss_frac;
 
     fiss_frac = AtomToMassFrac(fiss_frac, c_fiss, c_fill);
     fill_frac = AtomToMassFrac(fill_frac, c_fill, c_fiss);
-
     Material::Ptr m1 = Material::CreateUntracked(fiss_frac * tgt_qty, c_fiss);
 
     Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
     m1->Absorb(m2);
-
+    
     bool exclusive = false;
     port->AddBid(req, m1, this, exclusive);
   }
-
   cyclus::Converter<Material>::Ptr fissconv(new FissConverter(c_fill, c_fiss));
   cyclus::Converter<Material>::Ptr fillconv(new FillConverter(c_fill, c_fiss));
   // important! - the std::max calls prevent CapacityConstraint throwing a zero
@@ -265,12 +261,8 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
                                              fissconv);
   cyclus::CapacityConstraint<Material> fillc(std::max(fill.quantity(), 1e-10),
                                              fillconv);
-  cyclus::CapacityConstraint<Material> max(
-      std::max(std::min(fiss.quantity(), fill.quantity()), 1e-10));
-
   port->AddConstraint(fissc);
   port->AddConstraint(fillc);
-  port->AddConstraint(max);
 
   cyclus::CapacityConstraint<Material> cc(throughput);
   port->AddConstraint(cc);
@@ -309,23 +301,6 @@ void FuelFab::GetMatlTrades(
       throw cyclus::ValueError(ss.str());
     }
 
-    if (fiss.count() == 0) {
-      // use straight filler to satisfy this request
-      double fillqty = qty;
-      if (std::abs(fillqty - fill.quantity()) < cyclus::eps()) {
-        fillqty = std::min(fill.quantity(), qty);
-      }
-      responses.push_back(
-          std::make_pair(trades[i], fill.Pop(fillqty, cyclus::eps())));
-    } else if (fill.count() == 0) {
-      // use straight fissile to satisfy this request
-      double fissqty = qty;
-      if (std::abs(fissqty - fiss.quantity()) < cyclus::eps()) {
-        fissqty = std::min(fiss.quantity(), qty);
-      }
-      responses.push_back(
-          std::make_pair(trades[i], fiss.Pop(fissqty, cyclus::eps())));
-    } else {
       Composition::Ptr c_fiss = fiss.Peek()->comp();
       Composition::Ptr c_fill = fill.Peek()->comp();
 
@@ -334,7 +309,6 @@ void FuelFab::GetMatlTrades(
       double fiss_frac =
           MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
       double fill_frac = 1 - fiss_frac;
-
       // Atomic to mass conversion...
       fiss_frac =
           AtomToMassFrac(fiss_frac, fiss.Peek()->comp(), fill.Peek()->comp());
@@ -343,6 +317,7 @@ void FuelFab::GetMatlTrades(
 
       double fissqty = fiss_frac * qty;
       if (std::abs(fissqty - fiss.quantity()) < cyclus::eps()) {
+        
         fissqty = std::min(fiss.quantity(), fiss_frac * qty);
       }
       double fillqty = fill_frac * qty;
@@ -356,7 +331,6 @@ void FuelFab::GetMatlTrades(
         m->Absorb(fill.Pop(fillqty, cyclus::eps()));
       }
       responses.push_back(std::make_pair(trades[i], m));
-    }
   }
 }
 

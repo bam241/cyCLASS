@@ -103,7 +103,7 @@ bool Reactor::FullCore() {
   bool full_core = true;
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
-    if (core[batch_name].quantity() < batch_size) {
+    if ( std::abs(core[batch_name].quantity() - batch_size) > cyclus::eps_rsrc() ) {
       full_core = false;
     }
   }
@@ -253,7 +253,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
     double mass_in_core_n = core[batch_name].quantity();
     double mass_to_order = batch_size - mass_in_core_n;
 
-    if (mass_to_order > 0) {
+    if (mass_to_order > cyclus::eps_rsrc()) {
       RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
       std::vector<Request<Material>*> mreqs;
 
@@ -324,7 +324,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
       mass_to_order = std::min(mass_to_order, mass_need);
     }
 
-    if (mass_to_order > 0) {
+    if (mass_to_order > cyclus::eps_rsrc()) {
       RequestPortfolio<Material>::Ptr port(new RequestPortfolio<Material>());
       std::vector<Request<Material>*> mreqs;
 
@@ -534,7 +534,7 @@ void Reactor::Tock() {
 //________________________________________________________________________
 void Reactor::Transmute(int n_batch) {
   std::string batch_name = "batch_" + std::to_string(n_batch);
-  MatVec old = core[batch_name].PopN(core[batch_name].count());
+  Material::Ptr old = core[batch_name].Pop(core[batch_name].quantity());
   core[batch_name].Push(old);
 
   if (!MyCLASSAdaptator) {
@@ -542,10 +542,8 @@ void Reactor::Transmute(int n_batch) {
                                           xs_command, ir_model, ir_command);
   }
 
-  double old_mass = 0;
-  for (int i = 0; i < old.size(); i++) {
-    old_mass += old[i]->quantity();
-  }
+  double old_mass = old->quantity();
+
   std::stringstream ss;
   ss << old_mass << " kg from batch " << n_batch;
   Record("TRANSMUTE", ss.str());
@@ -559,16 +557,14 @@ void Reactor::Transmute(int n_batch) {
       irradiation_time -= n_batch_core * cycle_time;
     }
   }
-
-  for (int i = 0; i < old.size(); i++) {
-    double mass = old[i]->quantity();
+    double mass = old->quantity();
     double power_corrected =
         get_corrected_param<double>(power, power_uncertainty);
-    double bu = power_corrected * irradiation_time / batch_size;
-    cyclus::Composition::Ptr compo = old[i]->comp();
-    old[i]->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
+    double bu = power_corrected * irradiation_time / old_mass;
+    cyclus::Composition::Ptr compo = old->comp();
+
+      old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
         compo, power_corrected, mass, burnup));
-  }
 }
 
 //________________________________________________________________________
