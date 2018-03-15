@@ -103,7 +103,8 @@ bool Reactor::FullCore() {
   bool full_core = true;
   for (int i = 0; i < n_batch_core; i++) {
     std::string batch_name = "batch_" + std::to_string(i);
-    if ( std::abs(core[batch_name].quantity() - batch_size) > cyclus::eps_rsrc() ) {
+    if (std::abs(core[batch_name].quantity() - batch_size) >
+        cyclus::eps_rsrc()) {
       full_core = false;
     }
   }
@@ -420,7 +421,9 @@ void Reactor::AcceptMatlTrades(
     }
     Material::Ptr m = trade->second;
     index_res(m, commod);
-    if ( std::abs(m->quantity() - batch_size - core[batch_name].quantity()) < cyclus::eps_rsrc()&& !fresh_r) {
+    if (std::abs(m->quantity() - batch_size - core[batch_name].quantity()) <
+            cyclus::eps_rsrc() &&
+        !fresh_r) {
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size) {
         refueling_step = 0;
@@ -557,14 +560,14 @@ void Reactor::Transmute(int n_batch) {
       irradiation_time -= n_batch_core * cycle_time;
     }
   }
-    double mass = old->quantity();
-    double power_corrected =
-        get_corrected_param<double>(power, power_uncertainty);
-    double bu = power_corrected * irradiation_time / old_mass;
-    cyclus::Composition::Ptr compo = old->comp();
+  double mass = old->quantity();
+  double power_corrected =
+      get_corrected_param<double>(power, power_uncertainty);
+  double bu = power_corrected * irradiation_time / old_mass;
+  cyclus::Composition::Ptr compo = old->comp();
 
-      old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
-        compo, power_corrected, mass, burnup));
+  old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
+      compo, power_corrected, mass, burnup));
 }
 
 //________________________________________________________________________

@@ -119,19 +119,20 @@ float CLASSAdaptator::GetEnrichment(cyclus::Composition::Ptr c_fissil,
     target = myPhysicsModel->GetEQM()->GetModelParameter()["kThreshold"];
   }
   double val = 0.10;
-  
-  map<ZAI, string> VariableNames = myPhysicsModel->GetEQM()->GetMapOfTMVAVariableNames();
+
+  map<ZAI, string> VariableNames =
+      myPhysicsModel->GetEQM()->GetMapOfTMVAVariableNames();
   map<ZAI, string>::iterator it;
   IsotopicVector iv_list;
-  for(it = VariableNames.begin(); it != VariableNames.end(); it++){
-      iv_list += 1* it->first;
+  for (it = VariableNames.begin(); it != VariableNames.end(); it++) {
+    iv_list += 1 * it->first;
   }
   IsotopicVector iv_fissil = CYCLUS2CLASS(c_fissil);
-  //iv_fissil = iv_fissil.GetThisComposition(iv_list);
-  iv_fissil *= 1./iv_fissil.GetSumOfAll();
+  // iv_fissil = iv_fissil.GetThisComposition(iv_list);
+  iv_fissil *= 1. / iv_fissil.GetSumOfAll();
   IsotopicVector iv_fertil = CYCLUS2CLASS(c_fertil);
-  //iv_fertil = iv_fertil.GetThisComposition(iv_list);
-  iv_fertil *= 1./iv_fertil.GetSumOfAll();
+  // iv_fertil = iv_fertil.GetThisComposition(iv_list);
+  iv_fertil *= 1. / iv_fertil.GetSumOfAll();
   IsotopicVector iv_fuel = iv_fissil * val + (1 - val) * iv_fertil;
 
   float param = myPhysicsModel->GetEQM()->CalculateTargetParameter(iv_fuel);
@@ -176,8 +177,6 @@ float CLASSAdaptator::GetTargetValue(cyclus::Composition::Ptr fuel,
 cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(
     cyclus::Composition::Ptr InitialCompo, double power, double mass,
     double burnup) {
-  
-
   IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
   double ratio = 1 / InitialIV.GetTotalMass() * mass * 1e-3;
   InitialIV *= ratio;
@@ -194,9 +193,9 @@ cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(
   double Avogadro = 6.02214129e23;
   AfterIrradiationIV +=
       missing_mass * Avogadro / 136.9070 * ZAI(55, 137, 0) * 1e6;
-  
+
   AfterIrradiationIV *= 1 / ratio;
-  
+
   return Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
 }
 

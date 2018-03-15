@@ -230,7 +230,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
   } else {
     return ports;
   }
-  
+
   double qty_needed = 0;
   BidPortfolio<Material>::Ptr port(new BidPortfolio<Material>());
   for (int j = 0; j < reqs.size(); j++) {
@@ -249,7 +249,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
 
     Material::Ptr m2 = Material::CreateUntracked(fill_frac * tgt_qty, c_fill);
     m1->Absorb(m2);
-    
+
     bool exclusive = false;
     port->AddBid(req, m1, this, exclusive);
   }
@@ -301,36 +301,34 @@ void FuelFab::GetMatlTrades(
       throw cyclus::ValueError(ss.str());
     }
 
-      Composition::Ptr c_fiss = fiss.Peek()->comp();
-      Composition::Ptr c_fill = fill.Peek()->comp();
+    Composition::Ptr c_fiss = fiss.Peek()->comp();
+    Composition::Ptr c_fill = fill.Peek()->comp();
 
-      double tgt_v = MyCLASSAdaptator->GetTargetValue(tgt->comp());
+    double tgt_v = MyCLASSAdaptator->GetTargetValue(tgt->comp());
 
-      double fiss_frac =
-          MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
-      double fill_frac = 1 - fiss_frac;
-      // Atomic to mass conversion...
-      fiss_frac =
-          AtomToMassFrac(fiss_frac, fiss.Peek()->comp(), fill.Peek()->comp());
-      fill_frac =
-          AtomToMassFrac(fill_frac, fill.Peek()->comp(), fiss.Peek()->comp());
+    double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
+    double fill_frac = 1 - fiss_frac;
+    // Atomic to mass conversion...
+    fiss_frac =
+        AtomToMassFrac(fiss_frac, fiss.Peek()->comp(), fill.Peek()->comp());
+    fill_frac =
+        AtomToMassFrac(fill_frac, fill.Peek()->comp(), fiss.Peek()->comp());
 
-      double fissqty = fiss_frac * qty;
-      if (std::abs(fissqty - fiss.quantity()) < cyclus::eps()) {
-        
-        fissqty = std::min(fiss.quantity(), fiss_frac * qty);
-      }
-      double fillqty = fill_frac * qty;
-      if (std::abs(fillqty - fill.quantity()) < cyclus::eps()) {
-        fillqty = std::min(fill.quantity(), fill_frac * qty);
-      }
+    double fissqty = fiss_frac * qty;
+    if (std::abs(fissqty - fiss.quantity()) < cyclus::eps()) {
+      fissqty = std::min(fiss.quantity(), fiss_frac * qty);
+    }
+    double fillqty = fill_frac * qty;
+    if (std::abs(fillqty - fill.quantity()) < cyclus::eps()) {
+      fillqty = std::min(fill.quantity(), fill_frac * qty);
+    }
 
-      Material::Ptr m = fiss.Pop(fissqty, cyclus::eps());
-      // this if block prevents zero qty ResBuf pop exceptions
-      if (fill_frac > 0) {
-        m->Absorb(fill.Pop(fillqty, cyclus::eps()));
-      }
-      responses.push_back(std::make_pair(trades[i], m));
+    Material::Ptr m = fiss.Pop(fissqty, cyclus::eps());
+    // this if block prevents zero qty ResBuf pop exceptions
+    if (fill_frac > 0) {
+      m->Absorb(fill.Pop(fillqty, cyclus::eps()));
+    }
+    responses.push_back(std::make_pair(trades[i], m));
   }
 }
 
