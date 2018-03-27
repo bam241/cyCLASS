@@ -180,8 +180,12 @@ cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(
   IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
   double ratio = 1 / InitialIV.GetTotalMass() * mass * 1e-3;
   InitialIV *= ratio;
-
   cSecond finaltime = burnup * mass * 1e-3 / (power * 1e-3) * 3600 * 24;
+  
+  InitialIV.Print();
+  std::cout << "Mass frac: " << 100.-InitialIV.GetSpeciesComposition(92).GetTotalMass()*100./InitialIV.GetTotalMass() << std::endl; 
+  std::cout << "mass " << mass << " power " << power << " time " << finaltime/24./3600./365.4 << std::endl;
+  std::cout << InitialIV.GetTotalMass() << std::endl;
   EvolutionData myEvolution =
       myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power * 1e6);
   IsotopicVector AfterIrradiationIV =
@@ -195,6 +199,9 @@ cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(
       missing_mass * Avogadro / 136.9070 * ZAI(55, 137, 0) * 1e6;
 
   AfterIrradiationIV *= 1 / ratio;
+
+  Composition::Ptr mycompo = Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
+  cyclass::Print(mycompo->mass()/mass);
 
   return Composition::CreateFromAtom(CLASS2CYCLUS(AfterIrradiationIV));
 }
