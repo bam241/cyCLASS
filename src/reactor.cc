@@ -537,6 +537,8 @@ void Reactor::Tock() {
 //________________________________________________________________________
 void Reactor::Transmute(int n_batch) {
   std::string batch_name = "batch_" + std::to_string(n_batch);
+  
+  if(core[batch_name].quantity() > 0){
   Material::Ptr old = core[batch_name].Pop(core[batch_name].quantity());
   core[batch_name].Push(old);
 
@@ -568,6 +570,7 @@ void Reactor::Transmute(int n_batch) {
 
   old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
       compo, power_corrected, mass, burnup));
+  }
 }
 
 //________________________________________________________________________
