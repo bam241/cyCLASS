@@ -253,7 +253,7 @@ std::set<cyclus::BidPortfolio<Material>::Ptr> FuelFab::GetMatlBids(
     bool exclusive = false;
     port->AddBid(req, m1, this, exclusive);
   }
-  cyclus::Converter<Material>::Ptr fissconv(new FissConverter(c_fill, c_fiss));
+  cyclus::Converter<Material>::Ptr fissconv(new FissConverter(c_fiss, c_fill));
   cyclus::Converter<Material>::Ptr fillconv(new FillConverter(c_fill, c_fiss));
   // important! - the std::max calls prevent CapacityConstraint throwing a zero
   // cap exception
