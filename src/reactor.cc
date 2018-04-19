@@ -694,14 +694,22 @@ void Reactor::Record(std::string name, std::string val) {
 }
 
 template <typename T>
-double Reactor::get_corrected_param(T param, T param_uncertainty) {
+double Reactor::get_corrected_param(T& param, double& param_uncertainty) {
   if (param_uncertainty == 0) {
     return param;
   } else {
     std::default_random_engine de(std::clock());
     std::normal_distribution<double> nd(param, param * param_uncertainty);
-
     double val = nd(de);
+    if(systematic_uncertainty){
+      if( (T)val == (int)val ){
+        param = round(val);
+      }
+      else{
+        param = (T)val;
+      }
+      param_uncertainty = 0;
+    }
     return val;
   }
 }
