@@ -279,10 +279,10 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
             Composition::CreateFromAtom(fissil_comp);
         Composition::Ptr fertil_stream =
             Composition::CreateFromAtom(fertil_comp);
-        double required_burnup = burnup;
+        double required_burnup = get_corrected_param(burnup, burnup_uncertainty);
         if (context()->time() - enter_time() < cycle_time && !InCycle() &&
             u != 0) {
-          required_burnup = burnup / n_batch_core * u;
+          required_burnup = get_corrected_param(burnup, burnup_uncertainty) / n_batch_core * u;
         }
         double enrich = MyCLASSAdaptator->GetEnrichment(
             fissil_stream, fertil_stream, required_burnup);
@@ -352,7 +352,7 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
             Composition::CreateFromAtom(fertil_comp);
 
         double enrich = MyCLASSAdaptator->GetEnrichment(fissil_stream,
-                                                        fertil_stream, burnup);
+                                                        fertil_stream, get_corrected_param(burnup, burnup_uncertainty));
         CompMap fuel_comp = fertil_comp * (1 - enrich) + fissil_comp * enrich;
         Composition::Ptr fuel = Composition::CreateFromAtom(fuel_comp);
 
@@ -569,7 +569,7 @@ void Reactor::Transmute(int n_batch) {
   cyclus::Composition::Ptr compo = old->comp();
 
   old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
-      compo, power_corrected, mass, burnup));
+      compo, power_corrected, mass, bu));
   }
 }
 

@@ -172,6 +172,14 @@ class Reactor : public cyclus::Facility,
     "doc" : "Discharge burnup.", "uilabel" : "Discharge burnup", \
     "units" : "GWd/t", }
   double burnup;
+  #pragma cyclus var { \
+    "doc": "Relative Uncertainty on the amount of thermal burnup the facility produces when operating " \
+    "normally.", \
+    "uilabel": "burnup Relative Uncertainty", \
+    "units": "n.a.", \
+    "default": 0, \
+  }
+  double burnup_uncertainty;
 
   #pragma cyclus var { \
     "doc": "The duration of a full operational cycle (excluding refueling " \
