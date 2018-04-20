@@ -565,7 +565,7 @@ void Reactor::Transmute(int n_batch) {
   double mass = old->quantity();
   double power_corrected =
       get_corrected_param<double>(power, power_uncertainty);
-  double bu = power_corrected * irradiation_time / old_mass;
+  double bu = power_corrected * irradiation_time*30 / old_mass;
   cyclus::Composition::Ptr compo = old->comp();
 
   old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
