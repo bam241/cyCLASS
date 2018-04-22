@@ -193,7 +193,7 @@ void Reactor::Tick() {
 
   if (FullCore()) {
     if (cycle_step != 0 && cycle_step % cycle_time == 0 && !Refueling()) {
-      int batch = cycle_step / cycle_time - 1;
+      int batch = cycle_step / cycle_time -1;
       Transmute(batch);
       discharged[batch] = false;
       std::stringstream ss;
@@ -203,11 +203,11 @@ void Reactor::Tick() {
   }
 
   if (cycle_step != 0 && cycle_step % cycle_time == 0 && !Discharged()) {
-    int batch = cycle_step / cycle_time - 1;
+    int batch = cycle_step / cycle_time -1;
     discharged[batch] = Discharge(batch);
   }
   if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()) {
-    int batch = cycle_step / cycle_time - 1;
+    int batch = cycle_step / cycle_time -1;
     Load(batch);
     if (FullCore()) {
       refueling_step = 0;
@@ -280,9 +280,8 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         Composition::Ptr fertil_stream =
             Composition::CreateFromAtom(fertil_comp);
         double required_burnup = get_corrected_param(burnup, burnup_uncertainty);
-        if (context()->time() - enter_time() < cycle_time && !InCycle() &&
-            u != 0) {
-          required_burnup = get_corrected_param(burnup, burnup_uncertainty) / n_batch_core * u;
+        if (context()->time() - enter_time() < cycle_time && !InCycle()) {
+          required_burnup = get_corrected_param(burnup, burnup_uncertainty) / n_batch_core * (u+1);
         }
         double enrich = MyCLASSAdaptator->GetEnrichment(
             fissil_stream, fertil_stream, required_burnup);
@@ -565,9 +564,8 @@ void Reactor::Transmute(int n_batch) {
   double mass = old->quantity();
   double power_corrected =
       get_corrected_param<double>(power, power_uncertainty);
-  double bu = power_corrected * irradiation_time*30 / old_mass;
+  double bu = power_corrected/n_batch_core * irradiation_time*30 / old_mass;
   cyclus::Composition::Ptr compo = old->comp();
-
   old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
       compo, power_corrected, mass, bu));
   }

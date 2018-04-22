@@ -180,10 +180,9 @@ cyclus::Composition::Ptr CLASSAdaptator::GetCompAfterIrradiation(
   IsotopicVector InitialIV = CYCLUS2CLASS(InitialCompo);
   double ratio = 1 / InitialIV.GetTotalMass() * mass * 1e-3;
   InitialIV *= ratio;
-
   cSecond finaltime = burnup * mass * 1e-3 / (power * 1e-3) * 3600 * 24;
   EvolutionData myEvolution =
-      myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime, power * 1e6);
+      myPhysicsModel->GenerateEvolutionData(InitialIV, finaltime*2, power * 1e6);
   IsotopicVector AfterIrradiationIV =
       myEvolution.GetIsotopicVectorAt(finaltime).GetActinidesComposition();
   double CLASS_mass_ratio = AfterIrradiationIV.GetTotalMass() /
