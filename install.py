@@ -36,7 +36,6 @@ def check_windows_cmake(cmake_cmd):
 
 def update_describe():
     root_dir = os.path.split(__file__)[0]
-    fname = os.path.join(root_dir, 'src', 'version.cc.in')
     cmd = 'touch {0}'.format(fname)
     subprocess.check_call(cmd.split(), shell=(os.name == 'nt'))
 
@@ -84,8 +83,6 @@ def install_cyclus(args):
                           ]
         if args.build_type:
             cmake_cmd += ['-DCMAKE_BUILD_TYPE=' + args.build_type]
-        if args.core_version:
-            cmake_cmd += ['-DCORE_VERSION=' + args.core_version]
         if args.D is not None:
             cmake_cmd += ['-D' + x for x in args.D]
         if args.cmake_debug:
@@ -96,9 +93,6 @@ def install_cyclus(args):
 
     if args.config_only:
         return
-
-    if args.update:
-        update_describe()
 
     make_cmd = ['make']
     if args.threads:
@@ -134,10 +128,6 @@ def main():
 
     uninst = 'uninstall'
     parser.add_argument('--uninstall', action='store_true', help=uninst, default=False)
-
-    noupdate = 'do not update the hash in version.cc'
-    parser.add_argument('--no-update', dest='update', action='store_false',
-                        help=noupdate, default=True)
 
     clean = 'attempt to remove the build directory before building'
     parser.add_argument('--clean-build', action='store_true', help=clean)
@@ -187,9 +177,6 @@ def main():
 
     build_type = "the CMAKE_BUILD_TYPE"
     parser.add_argument('--build-type', '--build_type', help=build_type)
-
-    parser.add_argument('--core-version', dest='core_version', default=None,
-                        help='Sets the core version number.')
 
     parser.add_argument('-D', metavar='VAR', action='append',
                         help='Set enviornment variable(s).')
