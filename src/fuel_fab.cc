@@ -2,6 +2,9 @@
 
 #include <sstream>
 
+#include <time.h>
+#include <random>
+
 using cyclus::Material;
 using cyclus::Composition;
 using pyne::simple_xs;
@@ -307,6 +310,8 @@ void FuelFab::GetMatlTrades(
     double tgt_v = MyCLASSAdaptator->GetTargetValue(tgt->comp());
 
     double fiss_frac = MyCLASSAdaptator->GetEnrichment(c_fiss, c_fill, tgt_v);
+    fiss_frac = get_corrected_param(fiss_frac, fiss_frac_uncertainty);
+    
     double fill_frac = 1 - fiss_frac;
     // Atomic to mass conversion...
     fiss_frac =
@@ -329,6 +334,27 @@ void FuelFab::GetMatlTrades(
       m->Absorb(fill.Pop(fillqty, cyclus::eps()));
     }
     responses.push_back(std::make_pair(trades[i], m));
+  }
+}
+
+template <typename T>
+double FuelFab::get_corrected_param(T& param, double& param_uncertainty) {
+  if (param_uncertainty == 0) {
+    return param;
+  } else {
+    std::default_random_engine de(std::clock());
+    std::normal_distribution<double> nd(param, param * param_uncertainty);
+    double val = nd(de);
+    if(systematic_uncertainty){
+      if( (T)val == (int)val ){
+        param = round(val);
+      }
+      else{
+        param = (T)val;
+      }
+      param_uncertainty = 0;
+    }
+    return val;
   }
 }
 
