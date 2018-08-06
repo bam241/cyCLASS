@@ -60,8 +60,6 @@ namespace cyclass {
   virtual std::set<cyclus::RequestPortfolio<cyclus::Material>::Ptr>
   GetMatlRequests();
 
-  template <typename T>
-  double get_corrected_param(T& param, double& uncertainty);
 
  private:
   CLASSAdaptator* MyCLASSAdaptator;
@@ -139,11 +137,6 @@ namespace cyclass {
   #pragma cyclus var { "capacity" : "fiss_size" }
   cyclus::toolkit::ResBuf<cyclus::Material> fiss;
   
-  #pragma cyclus var {"default": False,\
-                      "tooltip":"Bool to determine how Storage handles batches",\
-  }
-  bool systematic_uncertainty;                    
-
   #pragma cyclus var { \
     "default": 0.00, \
     "tooltip": "Fissil enrichment relative uncertainty", \

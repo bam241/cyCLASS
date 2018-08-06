@@ -1,7 +1,10 @@
+#include "reactor.h"
+
 #include <cmath>
 #include <ostream>
-#include <random>
-#include "reactor.h"
+
+#include "uncertainty.h"
+
 
 using cyclus::Material;
 using cyclus::Composition;
@@ -95,6 +98,9 @@ void Reactor::EnterNotify() {
     for (int i = 0; i < fuel_outcommods.size(); i++) {
       fuel_prefs.push_back(cyclus::kDefaultPref);
     }
+  }
+  if(burnup == -1){
+    burnup = power / n_batch_core * cycle_step * 30 / batch_size;
   }
 }
 
@@ -193,7 +199,7 @@ void Reactor::Tick() {
 
   if (FullCore()) {
     if (cycle_step != 0 && cycle_step % cycle_time == 0 && !Refueling()) {
-      int batch = cycle_step / cycle_time -1;
+      int batch = cycle_step / cycle_time - 1;
       Transmute(batch);
       discharged[batch] = false;
       std::stringstream ss;
@@ -203,16 +209,15 @@ void Reactor::Tick() {
   }
 
   if (cycle_step != 0 && cycle_step % cycle_time == 0 && !Discharged()) {
-    int batch = cycle_step / cycle_time -1;
+    int batch = cycle_step / cycle_time - 1;
     discharged[batch] = Discharge(batch);
   }
   if (cycle_step % cycle_time == 0 && Discharged() && !Refueling()) {
-    int batch = cycle_step / cycle_time -1;
+    int batch = cycle_step / cycle_time - 1;
     Load(batch);
     if (FullCore()) {
       refueling_step = 0;
-      this_refueling_lenght =
-          round(get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
+      this_refueling_lenght = get_corrected_param(refuel_time, refuel_time_uncertainty);
     }
   }
 
@@ -279,9 +284,11 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
             Composition::CreateFromAtom(fissil_comp);
         Composition::Ptr fertil_stream =
             Composition::CreateFromAtom(fertil_comp);
-        double required_burnup = get_corrected_param(burnup, burnup_uncertainty);
+        double required_burnup =
+            get_corrected_param(burnup, burnup_uncertainty);
         if (context()->time() - enter_time() < cycle_time && !InCycle()) {
-          required_burnup = get_corrected_param(burnup, burnup_uncertainty) / n_batch_core * (u+1);
+          required_burnup = get_corrected_param(burnup, burnup_uncertainty) /
+                            n_batch_core * (u + 1);
         }
         double enrich = MyCLASSAdaptator->GetEnrichment(
             fissil_stream, fertil_stream, required_burnup);
@@ -350,8 +357,8 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         Composition::Ptr fertil_stream =
             Composition::CreateFromAtom(fertil_comp);
 
-        double enrich = MyCLASSAdaptator->GetEnrichment(fissil_stream,
-                                                        fertil_stream, get_corrected_param(burnup, burnup_uncertainty));
+        double enrich = MyCLASSAdaptator->GetEnrichment(
+            fissil_stream, fertil_stream, get_corrected_param(burnup, burnup_uncertainty));
         CompMap fuel_comp = fertil_comp * (1 - enrich) + fissil_comp * enrich;
         Composition::Ptr fuel = Composition::CreateFromAtom(fuel_comp);
 
@@ -426,8 +433,7 @@ void Reactor::AcceptMatlTrades(
       core[batch_name].Push(m);
       if (core[batch_name].quantity() == batch_size) {
         refueling_step = 0;
-        this_refueling_lenght = round(
-            get_corrected_param<int>(refuel_time, refuel_time_uncertainty));
+        this_refueling_lenght = get_corrected_param(refuel_time, refuel_time_uncertainty);
       }
     } else {
       fresh[batch_name].Push(m);
@@ -516,7 +522,7 @@ void Reactor::Tock() {
       if (batch == n_batch_core - 1) {
         cycle_step = 0;
         this_cycle_lenght =
-            round(get_corrected_param<int>(cycle_time, cycle_time_uncertainty));
+            get_corrected_param(cycle_time, cycle_time_uncertainty);
       }
     }
 
@@ -536,38 +542,39 @@ void Reactor::Tock() {
 //________________________________________________________________________
 void Reactor::Transmute(int n_batch) {
   std::string batch_name = "batch_" + std::to_string(n_batch);
-  
-  if(core[batch_name].quantity() > 0){
-  Material::Ptr old = core[batch_name].Pop(core[batch_name].quantity());
-  core[batch_name].Push(old);
 
-  if (!MyCLASSAdaptator) {
-    MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
-                                          xs_command, ir_model, ir_command);
-  }
+  if (core[batch_name].quantity() > 0) {
+    Material::Ptr old = core[batch_name].Pop(core[batch_name].quantity());
+    core[batch_name].Push(old);
 
-  double old_mass = old->quantity();
-
-  std::stringstream ss;
-  ss << old_mass << " kg from batch " << n_batch;
-  Record("TRANSMUTE", ss.str());
-
-  // Get time inside the reactor
-  // Get last batch number:
-  int irradiation_time = cycle_step;
-  if (context()->time() - enter_time() > n_batch_core * cycle_time) {
-    irradiation_time += n_batch * cycle_time;
-    if (irradiation_time > n_batch_core * cycle_time) {
-      irradiation_time -= n_batch_core * cycle_time;
+    if (!MyCLASSAdaptator) {
+      MyCLASSAdaptator = new CLASSAdaptator(eq_model, eq_command, xs_model,
+                                            xs_command, ir_model, ir_command);
     }
-  }
-  double mass = old->quantity();
-  double power_corrected =
-      get_corrected_param<double>(power, power_uncertainty);
-  double bu = power_corrected/n_batch_core * irradiation_time*30 / old_mass;
-  cyclus::Composition::Ptr compo = old->comp();
-  old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
-      compo, power_corrected, mass, bu));
+
+    double old_mass = old->quantity();
+
+    std::stringstream ss;
+    ss << old_mass << " kg from batch " << n_batch;
+    Record("TRANSMUTE", ss.str());
+
+    // Get time inside the reactor
+    // Get last batch number:
+    int irradiation_time = cycle_step;
+    if (context()->time() - enter_time() > n_batch_core * cycle_time) {
+      irradiation_time += n_batch * cycle_time;
+      if (irradiation_time > n_batch_core * cycle_time) {
+        irradiation_time -= n_batch_core * cycle_time;
+      }
+    }
+    double mass = old->quantity();
+    double power_corrected =
+        get_corrected_param(power, power_uncertainty);
+    double bu =
+        power_corrected / n_batch_core * irradiation_time * 30 / old_mass;
+    cyclus::Composition::Ptr compo = old->comp();
+    old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
+        compo, power_corrected, mass, bu));
   }
 }
 
@@ -691,26 +698,6 @@ void Reactor::Record(std::string name, std::string val) {
       ->Record();
 }
 
-template <typename T>
-double Reactor::get_corrected_param(T& param, double& param_uncertainty) {
-  if (param_uncertainty == 0) {
-    return param;
-  } else {
-    std::default_random_engine de(std::clock());
-    std::normal_distribution<double> nd(param, param * param_uncertainty);
-    double val = nd(de);
-    if(systematic_uncertainty){
-      if( (T)val == (int)val ){
-        param = round(val);
-      }
-      else{
-        param = (T)val;
-      }
-      param_uncertainty = 0;
-    }
-    return val;
-  }
-}
 
 extern "C" cyclus::Agent* ConstructReactor(cyclus::Context* ctx) {
   return new Reactor(ctx);

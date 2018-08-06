@@ -2,6 +2,7 @@
 
 
 USE_CYCLUS("cyclass" "CLASSAdaptator")
+USE_CYCLUS("cyclass" "uncertainty")
 USE_CYCLUS("cyclass" "fuel_fab")
 USE_CYCLUS("cyclass" "reactor")
 

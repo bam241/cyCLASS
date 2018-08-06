@@ -45,8 +45,6 @@ class Reactor : public cyclus::Facility,
   bool Discharged();
   bool Refueling();
   bool InCycle();
-  template<typename T>
-  double get_corrected_param(T& param, double& uncertainty);
 
   CLASSAdaptator* MyCLASSAdaptator;
 
@@ -168,8 +166,10 @@ class Reactor : public cyclus::Facility,
   std::string eq_command;
 
 ///////// cycle params ///////////
-  #pragma cyclus var {                                           \
-    "doc" : "Discharge burnup.", "uilabel" : "Discharge burnup", \
+  #pragma cyclus var {              \
+    "default": -1,                  \
+    "doc" : "Discharge burnup.",    \
+    "uilabel" : "Discharge burnup", \
     "units" : "GWd/t", }
   double burnup;
   #pragma cyclus var { \
@@ -213,13 +213,6 @@ class Reactor : public cyclus::Facility,
     "default": 0, \
   }
   double refuel_time_uncertainty;
-
-
-  #pragma cyclus var {"default": False,\
-                      "tooltip":"Bool to determine how Storage handles batches",\
-  }
-  bool systematic_uncertainty;                    
-
 
   int cycle_step;
   int refueling_step;

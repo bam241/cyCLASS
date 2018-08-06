@@ -60,7 +60,7 @@ SET(CLASS_ROOT_DIR "${CLASS_INCLUDE_DIR}/../..")
 
 # Look for the library
 FIND_LIBRARY(CLASS_LIBRARY 
-    NAMES libCLASSpkg.so
+    NAMES CLASSpkg
     HINTS "${CLASS_ROOT_DIR}" "${CLASS_ROOT_DIR}/lib" "$ENV{CLASS_PATH}/lib"
     "$ENV{CLASS_lib}"
     /usr/local/CLASS/lib /usr/local/CLASS
