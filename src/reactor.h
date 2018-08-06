@@ -119,8 +119,8 @@ class Reactor : public cyclus::Facility,
   int n_batch_core;
 
   #pragma cyclus var {                                                         \
-    "default" : 0, "uilabel" : "Minimum Fresh Fuel Inventory", "units" : "kg", \
-    "doc" : "Mass of fresh fuel for each batch to keep on-hand if possible.", }
+    "default" : 0, "uilabel" : "Minimum Fresh Fuel Inventory", "units" : "batches", \
+    "doc" : "Number of fresh fuel batch to keep on-hand if possible.", }
   double n_batch_fresh;
 
   #pragma cyclus var { \
