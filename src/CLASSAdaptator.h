@@ -7,6 +7,7 @@
 #include "IsotopicVector.hxx"
 #include <string>
 #include <sstream>
+#include <functional>
 
 class TTree;
 
