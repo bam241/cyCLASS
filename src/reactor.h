@@ -38,6 +38,7 @@ class Reactor : public cyclus::Facility,
   #pragma cyclus decl
 
  private:
+  std::vector<int> cycle_step_batch;
   std::string fuel_incommod(cyclus::Material::Ptr m);
   std::string fuel_outcommod(cyclus::Material::Ptr m);
   double fuel_pref(cyclus::Material::Ptr m);

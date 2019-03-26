@@ -87,8 +87,8 @@ void Reactor::EnterNotify() {
     fresh[batch_name].capacity(n_batch_fresh * batch_size);
     core[batch_name].capacity(batch_size);
     discharged.push_back(true);
+    cycle_step_batch.push_back(0);
   }
-
   // If the user ommitted fuel_prefs, we set it to zeros for each fuel
   // type.  Without this segfaults could occur - yuck.
   if (fuel_prefs.size() == 0) {
@@ -280,9 +280,8 @@ std::set<cyclus::RequestPortfolio<Material>::Ptr> Reactor::GetMatlRequests() {
         Composition::Ptr fertil_stream =
             Composition::CreateFromAtom(fertil_comp);
         double required_burnup = burnup;
-        if (context()->time() - enter_time() < cycle_time && !InCycle() &&
-            u != 0) {
-          required_burnup = burnup / n_batch_core * u;
+        if (context()->time() - enter_time() < cycle_time && !InCycle()) {
+          required_burnup = burnup / n_batch_core * (u+1);
         }
         double enrich = MyCLASSAdaptator->GetEnrichment(
             fissil_stream, fertil_stream, required_burnup);
@@ -524,6 +523,9 @@ void Reactor::Tock() {
     if (InCycle()) {
       RecordTimeSeries<POWER>(this, power_cap);
       cycle_step++;
+      for (int i=0; i < n_batch_core; i++){
+        cycle_step_batch[i]++;
+      }
     } else {
       RecordTimeSeries<POWER>(this, 0);
     }
@@ -553,13 +555,7 @@ void Reactor::Transmute(int n_batch) {
 
   // Get time inside the reactor
   // Get last batch number:
-  int irradiation_time = cycle_step;
-  if (context()->time() - enter_time() > n_batch_core * cycle_time) {
-    irradiation_time += n_batch * cycle_time;
-    if (irradiation_time > n_batch_core * cycle_time) {
-      irradiation_time -= n_batch_core * cycle_time;
-    }
-  }
+  int irradiation_time = cycle_step_batch[n_batch];
   double mass = old->quantity();
   double power_corrected =
       get_corrected_param<double>(power, power_uncertainty);
@@ -568,6 +564,7 @@ void Reactor::Transmute(int n_batch) {
 
   old->Transmute(MyCLASSAdaptator->GetCompAfterIrradiation(
       compo, power_corrected, mass, burnup));
+  cycle_step_batch[n_batch] = 0;
 }
 
 //________________________________________________________________________
